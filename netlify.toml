@@ -1,6 +1,7 @@
 [build]
   base = ""
   command = """
+    npm install &&
     cd client && 
     rm -rf node_modules package-lock.json && 
     npm install --legacy-peer-deps &&
