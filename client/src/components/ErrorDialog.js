@@ -7,19 +7,36 @@ import {
   Button, 
   Typography,
   Box
-} from '@mui/material';
+} from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import { ErrorOutline } from '@material-ui/icons';
 
+const useStyles = makeStyles((theme) => ({
+  dialogTitle: {
+    backgroundColor: '#ffebee'
+  },
+  titleContent: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(1)
+  },
+  content: {
+    marginTop: theme.spacing(2)
+  }
+}));
+
 function ErrorDialog({ open, message, onClose }) {
+  const classes = useStyles();
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ bgcolor: '#ffebee' }}>
-        <Box display="flex" alignItems="center" gap={1}>
+      <DialogTitle className={classes.dialogTitle}>
+        <Box className={classes.titleContent}>
           <ErrorOutline color="error" />
           <Typography variant="h6">Error</Typography>
         </Box>
       </DialogTitle>
-      <DialogContent sx={{ mt: 2 }}>
+      <DialogContent className={classes.content}>
         <Typography>{message}</Typography>
       </DialogContent>
       <DialogActions>
