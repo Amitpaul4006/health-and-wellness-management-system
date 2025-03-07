@@ -1,9 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, Typography, Chip, Box, IconButton, Menu, MenuItem, Snackbar, Alert } from '@mui/material';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import { LocalHospital, CalendarToday, Schedule, MoreVert } from '@material-ui/icons';
 import axios from 'axios';
 
 function MedicationCard({ medication, onUpdate }) {
@@ -59,13 +56,13 @@ function MedicationCard({ medication, onUpdate }) {
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <LocalHospitalIcon sx={{ color: '#1976d2', mr: 1 }} />
+              <LocalHospital sx={{ color: '#1976d2', mr: 1 }} />
               <Typography variant="h6" component="div">
                 {medication.name}
               </Typography>
             </Box>
             <IconButton onClick={handleMenuOpen} size="small">
-              <MoreVertIcon />
+              <MoreVert />
             </IconButton>
           </Box>
           
@@ -75,14 +72,14 @@ function MedicationCard({ medication, onUpdate }) {
 
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             <Chip
-              icon={<CalendarTodayIcon />}
+              icon={<CalendarToday />}
               label={medication.type === 'recurring' ? 'Recurring' : 'One-time'}
               color={medication.type === 'recurring' ? 'primary' : 'secondary'}
               size="small"
             />
             {medication.time && (
               <Chip
-                icon={<ScheduleIcon />}
+                icon={<Schedule />}
                 label={medication.time}
                 color="info"
                 size="small"

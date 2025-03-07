@@ -8,14 +8,14 @@ import {
   Typography,
   Box
 } from '@mui/material';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { ErrorOutline } from '@material-ui/icons';
 
 function ErrorDialog({ open, message, onClose }) {
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ bgcolor: '#ffebee' }}>
         <Box display="flex" alignItems="center" gap={1}>
-          <ErrorOutlineIcon color="error" />
+          <ErrorOutline color="error" />
           <Typography variant="h6">Error</Typography>
         </Box>
       </DialogTitle>

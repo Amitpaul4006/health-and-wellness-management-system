@@ -5,9 +5,7 @@ import {
   Paper, IconButton
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-import AddIcon from '@mui/icons-material/Add';
-import LocalHospitalIcon from '@mui/icons-material/LocalHospital';
+import { ExitToApp, Add, LocalHospital } from '@material-ui/icons';
 import MedicationCard from '../components/MedicationCard';
 import axios from 'axios';
 import jwt_decode from 'jwt-decode'; // Add this import
@@ -159,12 +157,12 @@ const Dashboard = () => {
     }}>
       <AppBar position="static" sx={{ backgroundColor: '#2196f3' }}>
         <Toolbar>
-          <LocalHospitalIcon sx={{ mr: 2 }} />
+          <LocalHospital sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Health & Wellness Manager
           </Typography>
           <IconButton color="inherit" onClick={() => handleLogout(false)}>
-            <ExitToAppIcon />
+            <ExitToApp />
           </IconButton>
         </Toolbar>
       </AppBar>
@@ -305,7 +303,7 @@ const Dashboard = () => {
                 <Button
                   type="submit"
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={<Add />}
                   sx={{
                     mt: 2,
                     backgroundColor: '#2e7d32',
