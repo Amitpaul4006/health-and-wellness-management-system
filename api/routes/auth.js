@@ -1,66 +1,68 @@
 const express = require('express');
 const router = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const { body } = require('express-validator');
+const authController = require('../controllers/authController');
 
-// Login route
-router.post('/login', async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-    
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+// Validation middleware
+const validateLogin = [
+  body('email').isEmail().withMessage('Please enter a valid email'),
+  body('password').exists().withMessage('Password is required')
+];
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
+const validateRegister = [
+  body('name')
+    .notEmpty()
+    .trim()
+    .withMessage('Name is required')
+    .isLength({ min: 2 })
+    .withMessage('Name must be at least 2 characters long'),
+  body('email')
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('Please enter a valid email')
+    .normalizeEmail(),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long')
+    .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
+    .withMessage('Password must contain at least one letter and one number')
+];
 
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({ token });
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
+// Routes with logging
+router.post('/login', validateLogin, (req, res, next) => {
+    console.log('Login attempt:', req.body.email);
+    authController.login(req, res, next);
 });
 
-// Register route
-router.post('/register', async (req, res) => {
+router.post('/register', validateRegister, (req, res, next) => {
+  console.log('Registration attempt with data:', {
+    name: req.body.name,
+    email: req.body.email,
+    // Don't log the password
+  });
+  authController.register(req, res, next);
+});
+
+router.post('/logout', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    
-    let user = await User.findOne({ email });
-    if (user) {
-      return res.status(400).json({ message: 'User already exists' });
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Session destruction error:', err);
+          return res.status(500).json({ message: 'Could not log out' });
+        }
+        res.clearCookie('connect.sid');
+        return res.status(200).json({ message: 'Logged out successfully' });
+      });
+    } else {
+      // If no session exists, just clear the cookie and return success
+      res.clearCookie('connect.sid');
+      return res.status(200).json({ message: 'Logged out successfully' });
     }
-
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    user = new User({
-      username,
-      email,
-      password: hashedPassword
-    });
-
-    await user.save();
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({ token });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('Logout error:', error);
+    res.status(500).json({ message: 'Server error during logout' });
   }
 });
 
