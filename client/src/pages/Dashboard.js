@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container, Box, Typography, TextField, Button, Select,
-  MenuItem, FormControl, InputLabel, Grid, AppBar, Toolbar,
-  Paper, IconButton
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Grid,
+  AppBar,
+  Toolbar,
+  Paper,
+  IconButton
+} from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import { ExitToApp, Add, LocalHospital } from '@material-ui/icons';
 import MedicationCard from '../components/MedicationCard';
 import axios from 'axios';
@@ -12,14 +23,32 @@ import jwt_decode from 'jwt-decode'; // Add this import
 import ErrorDialog from '../components/ErrorDialog';
 import ReportButton from '../components/ReportButton';
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(3),
-  margin: theme.spacing(2, 0),
-  backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  boxShadow: theme.shadows[3],
+const useStyles = makeStyles((theme) => ({
+  styledPaper: {
+    padding: theme.spacing(3),
+    margin: theme.spacing(2, 0),
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    boxShadow: theme.shadows[3],
+  },
+  root: {
+    minHeight: '100vh',
+    backgroundColor: '#f0f7ff',
+    backgroundImage: 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
+  },
+  appBar: {
+    backgroundColor: '#2196f3'
+  },
+  addButton: {
+    marginTop: theme.spacing(2),
+    backgroundColor: '#2e7d32',
+    '&:hover': {
+      backgroundColor: '#1b5e20'
+    }
+  }
 }));
 
 const Dashboard = () => {
+  const classes = useStyles();
   const [medications, setMedications] = useState([]);
   const [form, setForm] = useState({ name: '', description: '', type: 'one-time', date: '', time: '', recurrence: '', dayOfWeek: '', startDate: '', endDate: '' });
   const [error, setError] = useState({ show: false, message: '' });
@@ -150,12 +179,8 @@ const Dashboard = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh',
-      backgroundColor: '#f0f7ff',
-      backgroundImage: 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
-    }}>
-      <AppBar position="static" sx={{ backgroundColor: '#2196f3' }}>
+    <Box className={classes.root}>
+      <AppBar position="static" className={classes.appBar}>
         <Toolbar>
           <LocalHospital sx={{ mr: 2 }} />
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
@@ -167,8 +192,8 @@ const Dashboard = () => {
         </Toolbar>
       </AppBar>
 
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <StyledPaper>
+      <Container maxWidth="lg" style={{ marginTop: 32, marginBottom: 32 }}>
+        <Paper className={classes.styledPaper}>
           <Typography variant="h5" gutterBottom sx={{ color: '#1976d2' }}>
             Add New Medication
           </Typography>
@@ -304,20 +329,16 @@ const Dashboard = () => {
                   type="submit"
                   variant="contained"
                   startIcon={<Add />}
-                  sx={{
-                    mt: 2,
-                    backgroundColor: '#2e7d32',
-                    '&:hover': { backgroundColor: '#1b5e20' }
-                  }}
+                  className={classes.addButton}
                 >
                   Add Medication
                 </Button>
               </Grid>
             </Grid>
           </Box>
-        </StyledPaper>
+        </Paper>
 
-        <StyledPaper>
+        <Paper className={classes.styledPaper}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Typography variant="h5" gutterBottom sx={{ color: '#1976d2' }}>
               Your Medications
@@ -334,7 +355,7 @@ const Dashboard = () => {
               </Grid>
             ))}
           </Grid>
-        </StyledPaper>
+        </Paper>
       </Container>
       <ErrorDialog 
         open={error.show}

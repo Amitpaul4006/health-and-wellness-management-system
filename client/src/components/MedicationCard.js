@@ -1,7 +1,31 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Chip, Box, IconButton, Menu, MenuItem, Snackbar, Alert } from '@mui/material';
+import {
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  IconButton,
+  Menu,
+  MenuItem,
+  Snackbar
+} from '@material-ui/core';
+import { Alert } from '@material-ui/lab';
+import { makeStyles } from '@material-ui/core/styles';
 import { LocalHospital, CalendarToday, Schedule, MoreVert } from '@material-ui/icons';
 import axios from 'axios';
+
+const useStyles = makeStyles((theme) => ({
+  card: {
+    marginBottom: theme.spacing(2),
+    boxShadow: theme.shadows[3],
+    '&:hover': {
+      boxShadow: theme.shadows[6],
+      transform: 'scale(1.01)',
+      transition: 'all 0.2s'
+    }
+  },
+  // ...add other styles...
+}));
 
 function MedicationCard({ medication, onUpdate }) {
   const [anchorEl, setAnchorEl] = useState(null);
