@@ -1,9 +1,31 @@
 import React, { useState } from 'react';
 import { TextField, Button, Box } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
 
+const useStyles = makeStyles((theme) => ({
+  form: {
+    marginTop: theme.spacing(1)
+  },
+  alert: {
+    marginBottom: theme.spacing(2)
+  },
+  button: {
+    marginTop: theme.spacing(3),
+    marginBottom: theme.spacing(2),
+    width: '60%',
+    padding: theme.spacing(1),
+    fontSize: '0.9rem'
+  },
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'center'
+  }
+}));
+
 function RegisterForm() {
+  const classes = useStyles();
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -37,8 +59,8 @@ function RegisterForm() {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} noValidate sx={{ mt: 1 }}>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <Box component="form" onSubmit={handleSubmit} noValidate className={classes.form}>
+      {error && <Alert severity="error" className={classes.alert}>{error}</Alert>}
       <TextField
         margin="normal"
         required
@@ -72,17 +94,12 @@ function RegisterForm() {
         value={formData.name}
         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box className={classes.buttonContainer}>
         <Button
           type="submit"
           variant="contained"
-          sx={{
-            mt: 3,
-            mb: 2,
-            width: '60%', // Reduced from 100% or auto
-            py: 1,
-            fontSize: '0.9rem'
-          }}
+          color="primary"
+          className={classes.button}
         >
           Register
         </Button>
