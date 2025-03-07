@@ -1,0 +1,72 @@
+/* ...existing styles... */
+
+.form-group select {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  appearance: auto; /* This ensures the native select dropdown arrow appears */
+  font-size: 14px;
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+}
+
+/* Ensure dropdown options are visible */
+.form-group select option {
+  padding: 10px;
+  background-color: white;
+  color: #333;
+  font-size: 14px;
+}
+
+.week-select {
+  position: relative;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.week-dropdown {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  appearance: auto;
+  cursor: pointer;
+}
+
+.week-option {
+  padding: 10px;
+  font-size: 16px;
+  background-color: white;
+  color: #333;
+}
+
+.week-dropdown:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 5px rgba(74, 144, 226, 0.3);
+}
+
+/* Remove any custom styling that might be hiding options */
+.week-dropdown option {
+  display: block !important;
+  visibility: visible !important;
+}
+
+/* Ensure dropdown expands properly */
+.week-dropdown[size] {
+  height: auto;
+}
