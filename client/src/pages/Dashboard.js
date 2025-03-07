@@ -182,8 +182,8 @@ const Dashboard = () => {
     <Box className={classes.root}>
       <AppBar position="static" className={classes.appBar}>
         <Toolbar>
-          <LocalHospital sx={{ mr: 2 }} />
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+          <LocalHospital style={{ marginRight: 16 }} />
+          <Typography variant="h6" component="div" style={{ flexGrow: 1 }}>
             Health & Wellness Manager
           </Typography>
           <IconButton color="inherit" onClick={() => handleLogout(false)}>
@@ -194,7 +194,7 @@ const Dashboard = () => {
 
       <Container maxWidth="lg" style={{ marginTop: 32, marginBottom: 32 }}>
         <Paper className={classes.styledPaper}>
-          <Typography variant="h5" gutterBottom sx={{ color: '#1976d2' }}>
+          <Typography variant="h5" gutterBottom style={{ color: '#1976d2' }}>
             Add New Medication
           </Typography>
           <Box component="form" onSubmit={handleSubmit}>
@@ -339,8 +339,8 @@ const Dashboard = () => {
         </Paper>
 
         <Paper className={classes.styledPaper}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h5" gutterBottom sx={{ color: '#1976d2' }}>
+          <Box style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5" gutterBottom style={{ color: '#1976d2' }}>
               Your Medications
             </Typography>
             <ReportButton />
