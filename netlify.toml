@@ -1,13 +1,13 @@
 [build]
   base = ""
-  command = "cd client && npm install --force && npm run build"
+  command = "cd client && npm install --legacy-peer-deps && npm run build"
   publish = "client/build"
 
 [build.environment]
-  NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps"
+  NODE_VERSION = "16"
   CI = "false"
   DISABLE_ESLINT_PLUGIN = "true"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 [[redirects]]
   from = "/api/*"
