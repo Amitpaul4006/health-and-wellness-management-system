@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { TextField, Button, Box, Alert } from '@mui/material';
+import { TextField, Button, Box } from '@material-ui/core';
+import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
 
 function RegisterForm() {

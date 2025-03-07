@@ -7,7 +7,8 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  Snackbar
+  Snackbar,
+  Chip
 } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { makeStyles } from '@material-ui/core/styles';
@@ -68,19 +69,11 @@ function MedicationCard({ medication, onUpdate }) {
 
   return (
     <>
-      <Card sx={{ 
-        mb: 2, 
-        boxShadow: 3,
-        '&:hover': {
-          boxShadow: 6,
-          transform: 'scale(1.01)',
-          transition: 'all 0.2s'
-        }
-      }}>
+      <Card className={classes.card}>
         <CardContent>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <LocalHospital sx={{ color: '#1976d2', mr: 1 }} />
+          <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <Box style={{ display: 'flex', alignItems: 'center' }}>
+              <LocalHospital style={{ color: '#1976d2', marginRight: 8 }} />
               <Typography variant="h6" component="div">
                 {medication.name}
               </Typography>
@@ -90,11 +83,11 @@ function MedicationCard({ medication, onUpdate }) {
             </IconButton>
           </Box>
           
-          <Typography color="text.secondary" sx={{ mb: 1.5 }}>
+          <Typography color="text.secondary" style={{ marginBottom: 24 }}>
             {medication.description}
           </Typography>
 
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <Box style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <Chip
               icon={<CalendarToday />}
               label={medication.type === 'recurring' ? 'Recurring' : 'One-time'}
@@ -113,7 +106,7 @@ function MedicationCard({ medication, onUpdate }) {
               label={medication.status === 'done' ? 'Completed' : 'Pending'}
               color={medication.status === 'done' ? 'success' : 'warning'}
               size="small"
-              sx={{ fontWeight: 'bold' }}
+              style={{ fontWeight: 'bold' }}
             />
           </Box>
 
