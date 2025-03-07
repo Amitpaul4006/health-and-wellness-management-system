@@ -1,12 +1,37 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Paper, Typography, CircularProgress } from '@material-ui/core';
+import { makeStyles } from '@material-ui/core/styles';
 import axios from 'axios';
+
+const useStyles = makeStyles((theme) => ({
+  root: {
+    minHeight: '100vh',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f5f5f5'
+  },
+  paper: {
+    padding: theme.spacing(4),
+    textAlign: 'center'
+  },
+  progress: {
+    marginBottom: theme.spacing(2)
+  },
+  successText: {
+    color: theme.palette.success.main
+  },
+  errorText: {
+    color: theme.palette.error.main
+  }
+}));
 
 const MarkDone = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('processing');
+  const classes = useStyles();
 
   useEffect(() => {
     const updateStatus = async () => {
@@ -53,20 +78,17 @@ const MarkDone = () => {
   };
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: '#f5f5f5'
-    }}>
-      <Paper sx={{ p: 4, textAlign: 'center' }}>
-        {status === 'processing' && <CircularProgress sx={{ mb: 2 }} />}
-        <Typography variant="h6" color={
-          status === 'success' ? 'success.main' : 
-          status === 'error' ? 'error.main' : 
-          'text.primary'
-        }>
+    <Box className={classes.root}>
+      <Paper className={classes.paper}>
+        {status === 'processing' && <CircularProgress className={classes.progress} />}
+        <Typography 
+          variant="h6" 
+          className={
+            status === 'success' ? classes.successText : 
+            status === 'error' ? classes.errorText : 
+            undefined
+          }
+        >
           {getStatusMessage()}
         </Typography>
       </Paper>
