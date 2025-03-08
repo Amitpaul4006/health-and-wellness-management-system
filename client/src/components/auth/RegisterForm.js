@@ -3,6 +3,10 @@ import { TextField, Button, Box } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+// Add API_URL constant
+const API_URL = process.env.REACT_APP_API_URL || '/.netlify/functions/api';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -38,23 +42,14 @@ function RegisterForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
+      const response = await axios.post(`${API_URL}/auth/register`, formData);
       
-      if (!response.ok) throw new Error(data.message || 'Registration failed');
-      
-      localStorage.setItem('token', data.token);
-      navigate('/dashboard');
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        navigate('/dashboard');
+      }
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Registration failed');
     }
   };
 

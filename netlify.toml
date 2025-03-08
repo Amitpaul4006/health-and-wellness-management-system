@@ -16,6 +16,7 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
   API_URL = "https://healthandwellnessmanagement.netlify.app/api"
+  REACT_APP_API_URL = "/.netlify/functions/api"
 
 [[redirects]]
   from = "/api/*"
