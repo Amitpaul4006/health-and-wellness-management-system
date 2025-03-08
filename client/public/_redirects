@@ -1,0 +1,10 @@
+/* /index.html 200
+/api/* /.netlify/functions/api/:splat 200
+/api/auth/* /.netlify/functions/api/auth/:splat 200
+/api/medications/* /.netlify/functions/api/medications/:splat 200
+/api/reports/* /.netlify/functions/api/reports/:splat 200
+/static/* /static/:splat 200
+/manifest.json /manifest.json 200
+/favicon.ico /favicon.ico 200
+/logo192.png /logo192.png 200
+/logo512.png /logo512.png 200

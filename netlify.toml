@@ -5,8 +5,7 @@
     cd client && 
     rm -rf node_modules package-lock.json && 
     npm install --legacy-peer-deps &&
-    npm install jwt-decode@3.1.2 --save-exact &&
-    NODE_ENV=production npm run build
+    REACT_APP_API_URL=$API_URL npm run build
   """
   publish = "client/build"
 
@@ -16,6 +15,7 @@
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
+  API_URL = "https://healthandwellnessmanagement.netlify.app/api"
 
 [[redirects]]
   from = "/api/*"

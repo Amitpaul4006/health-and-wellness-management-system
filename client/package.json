@@ -2,6 +2,7 @@
   "name": "health-wellness-client",
   "version": "1.0.0",
   "private": true,
+  "homepage": "/",
   "dependencies": {
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "^4.11.3",
@@ -35,7 +36,6 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "homepage": ".",
   "eslintConfig": {
     "extends": [
       "react-app",
