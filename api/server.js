@@ -52,8 +52,13 @@ async function initializeWorker() {
   }
 }
 
-// Start the worker when server starts
-initializeWorker();
+// Check for serverless environment
+const isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+
+// Skip worker initialization in serverless
+if (!isServerless) {
+  initializeWorker();
+}
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
@@ -63,15 +68,25 @@ process.on('SIGTERM', async () => {
   // ...existing shutdown logic...
 });
 
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log('Request:', {
+    method: req.method,
+    path: req.path,
+    body: req.body
+  });
+  next();
+});
+
+// Mount routes without /api prefix
+app.use('/auth', authRoutes);
+app.use('/medications', medicationRoutes);
+app.use('/reports', reportRoutes);
+
 // Test route to verify API
 app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
-
-// Routes
-app.use('/auth', authRoutes);
-app.use('/medications', medicationRoutes);
-app.use('/reports', reportRoutes);
 
 // More detailed error handling
 app.use((err, req, res, next) => {

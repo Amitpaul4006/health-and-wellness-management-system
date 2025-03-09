@@ -22,10 +22,6 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
-  [redirects.headers]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 
 [[redirects]]
   from = "/*"
@@ -36,4 +32,25 @@
 [functions]
   directory = "api"
   node_bundler = "esbuild"
+  included_files = ["api/**/*"]
+
+[[redirects]]
+  from = "/.netlify/functions/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = true
+
+[functions.api]
   included_files = ["api/**/*"]
