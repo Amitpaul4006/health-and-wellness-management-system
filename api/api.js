@@ -1,17 +1,21 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
-// Create serverless handler with custom configuration
 const handler = serverless(app, {
-  basePath: ''
+  basePath: '',
+  request: (req, event) => {
+    // Add original path for debugging
+    req.originalPath = event.path;
+    return req;
+  }
 });
 
-exports.handler = async (event, context) => {
-  // Debug logging
-  console.log('Incoming request:', {
+// Wrap handler to catch all errors
+const wrappedHandler = async (event, context) => {
+  console.log('Function invoked:', {
     path: event.path,
     method: event.httpMethod,
-    body: event.body
+    headers: event.headers
   });
 
   // Handle CORS preflight
@@ -27,37 +31,26 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Clean path - remove Netlify Functions prefix
-    if (event.path.startsWith('/.netlify/functions/api')) {
-      event.path = event.path.replace('/.netlify/functions/api', '');
-    }
-
-    console.log('Processing request:', {
-      originalPath: event.path,
-      method: event.httpMethod
-    });
-
-    // Process request through Express app
-    const response = await handler(event, context);
-
-    // Add CORS headers to all responses
-    return {
-      ...response,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-        'Content-Type': 'application/json',
-        ...response.headers
-      }
+    const result = await handler(event, context);
+    
+    // Add CORS and content headers
+    const headers = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Content-Type': 'application/json',
+      ...result.headers
     };
+
+    return { ...result, headers };
   } catch (error) {
     console.error('Function error:', error);
+    
     return {
-      statusCode: error.statusCode || 500,
+      statusCode: 500,
       body: JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        path: event.path 
+        message: 'Internal server error',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -66,3 +59,5 @@ exports.handler = async (event, context) => {
     };
   }
 };
+
+exports.handler = wrappedHandler;
