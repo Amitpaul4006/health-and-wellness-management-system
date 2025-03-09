@@ -1,52 +1,43 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
-// Create handler with custom configuration
 const handler = serverless(app, {
-  basePath: ''
+  basePath: '' // Important: This ensures paths are handled correctly
 });
 
 exports.handler = async (event, context) => {
-  console.log('Request details:', {
+  console.log('Raw event:', {
     path: event.path,
     method: event.httpMethod,
-    body: event.body
+    headers: event.headers
   });
 
-  // Remove function path prefix
-  event.path = event.path.replace('/.netlify/functions/api', '');
-  
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-      }
-    };
+  // Clean up the path - this is crucial
+  if (event.path.startsWith('/.netlify/functions/api')) {
+    event.path = event.path.replace('/.netlify/functions/api', '');
   }
 
+  console.log('Processed path:', event.path);
+
   try {
-    const result = await handler(event, context);
+    const response = await handler(event, context);
+    console.log('Handler response:', response);
+
     return {
-      ...result,
+      ...response,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Content-Type': 'application/json',
-        ...result.headers
+        ...response.headers
       }
     };
   } catch (error) {
-    console.error('Function error:', error);
+    console.error('Handler error:', error);
     return {
-      statusCode: error.statusCode || 500,
-      body: JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        path: event.path 
-      }),
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message || 'Internal server error' }),
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'

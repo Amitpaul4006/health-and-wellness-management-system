@@ -9,6 +9,16 @@ const { processJob } = require('./services/jobScheduler');
 
 const app = express();
 
+// Debug middleware
+app.use((req, res, next) => {
+  console.log('Server received:', {
+    path: req.path,
+    method: req.method,
+    body: req.body
+  });
+  next();
+});
+
 // CORS for Netlify
 app.use(cors({
   origin: '*',
