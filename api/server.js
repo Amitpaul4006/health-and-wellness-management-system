@@ -9,12 +9,11 @@ const { processJob } = require('./services/jobScheduler');
 
 const app = express();
 
-// CORS configuration
+// CORS for Netlify
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
@@ -55,21 +54,24 @@ process.on('SIGTERM', async () => {
   // ...existing shutdown logic...
 });
 
-// Routes
-app.use('/auth', authRoutes);  // Note: removed /api prefix
-app.use('/medications', medicationRoutes);
-app.use('/reports', reportRoutes);
+// Base router
+const apiRouter = express.Router();
+
+// Mount routes without /api prefix for Netlify Functions
+apiRouter.use('/auth', authRoutes);
+apiRouter.use('/medications', medicationRoutes);
+apiRouter.use('/reports', reportRoutes);
+
+// Use router at root level
+app.use('/', apiRouter);
 
 // More detailed error handling
 app.use((err, req, res, next) => {
-  console.error('Error details:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path
-  });
+  console.error('API Error:', err);
   res.status(500).json({ 
-    message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    message: process.env.NODE_ENV === 'production' 
+      ? 'Internal server error' 
+      : err.message 
   });
 });
 

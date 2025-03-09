@@ -18,15 +18,28 @@ exports.handler = async (event, context) => {
   }
 
   // Handle actual request
-  const response = await handler(event, context);
-  
-  // Add CORS headers to all responses
-  response.headers = {
-    ...response.headers,
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
-  };
+  try {
+    console.log('Request:', event.httpMethod, event.path);
+    const response = await handler(event, context);
+    
+    // Add CORS headers to all responses
+    response.headers = {
+      ...response.headers,
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+    };
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error('Function error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ message: 'Internal server error' }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+  }
 };
