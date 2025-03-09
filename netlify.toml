@@ -3,7 +3,6 @@
   command = """
     npm install &&
     cd client && 
-    rm -rf node_modules package-lock.json && 
     npm install --legacy-peer-deps &&
     npm run build
   """
@@ -15,22 +14,12 @@
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
-  REACT_APP_API_URL = "/.netlify/functions/api"
 
 [[redirects]]
-  from = "/.netlify/functions/api/*"
+  from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
+  force = true
 
 [[redirects]]
   from = "/*"
@@ -41,3 +30,4 @@
 [functions]
   directory = "api"
   node_bundler = "esbuild"
+  included_files = ["api/**/*"]
