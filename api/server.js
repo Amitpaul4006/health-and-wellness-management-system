@@ -11,15 +11,14 @@ const app = express();
 
 // Debug middleware
 app.use((req, res, next) => {
-  console.log('Server received:', {
+  console.log('Express Request:', {
     path: req.path,
-    method: req.method,
-    body: req.body
+    method: req.method
   });
   next();
 });
 
-// CORS for Netlify
+// CORS middleware
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -69,7 +68,7 @@ app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
 
-// Mount routes directly (no /api prefix)
+// Routes
 app.use('/auth', authRoutes);
 app.use('/medications', medicationRoutes);
 app.use('/reports', reportRoutes);
@@ -94,10 +93,34 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   retryWrites: true,
-})
-.then(() => console.log('MongoDB connected:', 
-  process.env.NODE_ENV === 'production' ? 'Production DB' : 'Development DB'))
-.catch(err => console.error('MongoDB connection error:', err));
+  serverSelectionTimeoutMS: 30000, // Increase timeout
+  socketTimeoutMS: 45000,          // Increase socket timeout
+  connectTimeoutMS: 30000,         // Connection timeout
+  keepAlive: true,
+  keepAliveInitialDelay: 300000    // Keep alive
+}).then(() => {
+  console.log('MongoDB connected:', 
+    process.env.NODE_ENV === 'production' ? 'Production DB' : 'Development DB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
+  // Don't exit in production
+  if (process.env.NODE_ENV !== 'production') {
+    process.exit(1);
+  }
+});
+
+// Add mongoose error handlers
+mongoose.connection.on('error', err => {
+  console.error('MongoDB error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected. Attempting to reconnect...');
+});
+
+mongoose.connection.on('reconnected', () => {
+  console.log('MongoDB reconnected');
+});
 
 // Export handler for Netlify Functions
 module.exports = app;

@@ -1,8 +1,5 @@
-const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/.netlify/functions/api'  // Use full Netlify Functions path
-  : 'http://localhost:5000/api';
+const API_URL = '/.netlify/functions/api';
 
-console.log('Environment:', process.env.NODE_ENV);
-console.log('API URL:', API_URL);
+console.log('Using API URL:', API_URL);
 
 export default API_URL;
