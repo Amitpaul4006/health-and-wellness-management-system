@@ -35,13 +35,61 @@ router.post('/login', validateLogin, (req, res, next) => {
     authController.login(req, res, next);
 });
 
-router.post('/register', validateRegister, (req, res, next) => {
-  console.log('Registration attempt with data:', {
-    name: req.body.name,
-    email: req.body.email,
-    // Don't log the password
-  });
-  authController.register(req, res, next);
+router.post('/register', async (req, res) => {
+  try {
+    console.log('Registration attempt for:', req.body.email);
+    
+    // Set timeout for database operations
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database operation timed out')), 5000)
+    );
+
+    const registrationPromise = (async () => {
+      // Check connection state
+      if (mongoose.connection.readyState !== 1) {
+        throw new Error('Database not connected');
+      }
+
+      const { email, username } = req.body;
+      
+      // Use lean() for faster queries
+      const existingUser = await User.findOne({
+        $or: [{ email }, { username }]
+      }).lean().maxTimeMS(5000);
+      
+      if (existingUser) {
+        return res.status(400).json({
+          message: 'User already exists',
+          field: existingUser.email === email ? 'email' : 'username'
+        });
+      }
+
+      const user = new User(req.body);
+      await user.save({ timeout: 5000 });
+      
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+      
+      return res.status(201).json({
+        message: 'Registration successful',
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username
+        }
+      });
+    })();
+
+    // Race between timeout and registration
+    await Promise.race([registrationPromise, timeoutPromise]);
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({
+      message: 'Registration failed',
+      error: error.message
+    });
+  }
 });
 
 router.post('/logout', async (req, res) => {

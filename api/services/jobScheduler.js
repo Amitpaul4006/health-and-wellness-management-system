@@ -27,7 +27,7 @@ const createQueue = (name, connection = { host: 'localhost', port: 6379 }) => {
 
 const createJob = async (data) => {
   if (isServerless) {
-    // Direct processing in serverless
+    console.log('Direct processing in serverless environment');
     try {
       await sendEmail({
         to: data.email,

@@ -104,28 +104,27 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Update MongoDB configuration
+// Update MongoDB configuration with longer timeouts
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   retryWrites: true,
-  serverSelectionTimeoutMS: 60000,
-  socketTimeoutMS: 45000,
-  connectTimeoutMS: 60000,
+  serverSelectionTimeoutMS: 5000,  // Reduced from 60000
+  socketTimeoutMS: 5000,           // Reduced from 45000
+  connectTimeoutMS: 5000,          // Reduced from 30000
   keepAlive: true,
-  keepAliveInitialDelay: 300000
-})
-.then(() => console.log('MongoDB connected'))
-.catch(err => {
+  bufferCommands: false,           // Disable buffering
+  maxPoolSize: 1                   // Minimize connections
+}).then(() => {
+  console.log('MongoDB connected in', process.env.NODE_ENV, 'mode');
+}).catch(err => {
   console.error('MongoDB connection error:', err);
-  if (process.env.NODE_ENV === 'development') {
-    process.exit(1);
-  }
 });
 
-// Add connection error handlers
+// More aggressive error handling
 mongoose.connection.on('error', err => {
   console.error('MongoDB error:', err);
+  mongoose.disconnect();
 });
 
 mongoose.connection.on('disconnected', () => {
