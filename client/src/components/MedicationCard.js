@@ -14,6 +14,8 @@ import { Alert } from '@material-ui/lab';
 import { makeStyles } from '@material-ui/core/styles';
 import { LocalHospital, CalendarToday, Schedule, MoreVert } from '@material-ui/icons';
 import axios from 'axios';
+import API_URL from '../config/api';
+import { medicationService } from '../services/api';
 
 const useStyles = makeStyles((theme) => ({
   card: {
@@ -44,23 +46,10 @@ function MedicationCard({ medication, onUpdate }) {
   const handleStatusUpdate = async (newStatus) => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('No authentication token found');
-
-      await axios.patch(
-        `${process.env.REACT_APP_API_URL}/api/medications/${medication._id}/status`,
-        { status: newStatus },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      
+      await medicationService.updateStatus(medication._id, newStatus);
       await onUpdate();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to update status');
+      setError(error.response?.data?.message || 'Failed to update status');
     } finally {
       setLoading(false);
       handleMenuClose();

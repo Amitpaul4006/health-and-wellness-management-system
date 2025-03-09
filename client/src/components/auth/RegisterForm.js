@@ -4,9 +4,8 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-
-// Add API_URL constant
-const API_URL = process.env.REACT_APP_API_URL || '/.netlify/functions/api';
+import API_URL from '../../config/api';
+import { authService } from '../../services/api';
 
 const useStyles = makeStyles((theme) => ({
   form: {
@@ -42,13 +41,11 @@ function RegisterForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, formData);
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        navigate('/dashboard');
-      }
+      const response = await authService.register(formData);
+      localStorage.setItem('token', response.data.token);
+      navigate('/dashboard');
     } catch (err) {
+      console.error('Registration error:', err);
       setError(err.response?.data?.message || 'Registration failed');
     }
   };
