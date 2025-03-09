@@ -54,6 +54,11 @@ process.on('SIGTERM', async () => {
   // ...existing shutdown logic...
 });
 
+// Test route to verify API
+app.get('/test', (req, res) => {
+  res.json({ message: 'API is working' });
+});
+
 // Mount routes directly (no /api prefix)
 app.use('/auth', authRoutes);
 app.use('/medications', medicationRoutes);

@@ -15,6 +15,7 @@
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
   MONGODB_URI = "mongodb+srv://amitpaul4006:bQrijN7EsQe3mcoz@cluster0.yxipk.mongodb.net/healthwellness?retryWrites=true&w=majority&appName=Cluster0"
+  NODE_ENV = "production"
 
 [[redirects]]
   from = "/api/*"
@@ -25,6 +26,12 @@
 [[redirects]]
   from = "/*"
   to = "/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/.netlify/functions/api/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
