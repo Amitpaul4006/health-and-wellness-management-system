@@ -5,7 +5,7 @@
     cd client && 
     rm -rf node_modules package-lock.json && 
     npm install --legacy-peer-deps &&
-    REACT_APP_API_URL=$API_URL npm run build
+    npm run build
   """
   publish = "client/build"
 
@@ -15,18 +15,10 @@
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
-  API_URL = "https://healthandwellnessmanagement.netlify.app/api"
   REACT_APP_API_URL = "/.netlify/functions/api"
 
-[[headers]]
-  for = "/*"
-    [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-
 [[redirects]]
-  from = "/api/*"
+  from = "/.netlify/functions/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
 

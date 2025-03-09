@@ -31,6 +31,7 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function MedicationCard({ medication, onUpdate }) {
+  const classes = useStyles(); // Add this line
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);

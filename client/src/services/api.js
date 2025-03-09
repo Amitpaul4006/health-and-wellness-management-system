@@ -8,13 +8,9 @@ const api = axios.create({
   }
 });
 
-// Interceptors for both environments
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  console.log('API Request:', config.url);
+// Debug interceptor
+api.interceptors.request.use(config => {
+  console.log('Request:', config.method.toUpperCase(), config.url);
   return config;
 });
 
@@ -28,8 +24,8 @@ api.interceptors.response.use(
 
 // Service exports
 export const authService = {
-  login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
+  login: (data) => api.post('/auth/login', data),
   logout: () => api.post('/auth/logout')
 };
 
