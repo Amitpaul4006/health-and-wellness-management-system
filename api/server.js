@@ -20,7 +20,7 @@ app.use(express.json());
 
 // Add request logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
+  console.log('API Request:', req.method, req.path);
   next();
 });
 
@@ -54,16 +54,10 @@ process.on('SIGTERM', async () => {
   // ...existing shutdown logic...
 });
 
-// Base router
-const apiRouter = express.Router();
-
-// Mount routes without /api prefix for Netlify Functions
-apiRouter.use('/auth', authRoutes);
-apiRouter.use('/medications', medicationRoutes);
-apiRouter.use('/reports', reportRoutes);
-
-// Use router at root level
-app.use('/', apiRouter);
+// Mount routes directly (no /api prefix)
+app.use('/auth', authRoutes);
+app.use('/medications', medicationRoutes);
+app.use('/reports', reportRoutes);
 
 // More detailed error handling
 app.use((err, req, res, next) => {
