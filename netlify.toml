@@ -14,10 +14,11 @@
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"
   NODE_OPTIONS = "--max_old_space_size=4096"
+  MONGODB_URI = "mongodb+srv://amitpaul4006:bQrijN7EsQe3mcoz@cluster0.yxipk.mongodb.net/healthwellness?retryWrites=true&w=majority&appName=Cluster0"
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/:splat"
+  to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
