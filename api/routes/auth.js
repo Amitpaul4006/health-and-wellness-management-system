@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 const { body } = require('express-validator');
 const authController = require('../controllers/authController');
 
@@ -39,50 +42,38 @@ router.post('/register', async (req, res) => {
   try {
     console.log('Registration attempt for:', req.body.email);
     
-    // Set timeout for database operations
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database operation timed out')), 5000)
-    );
+    // Check MongoDB connection first
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error('Database connection not ready');
+    }
 
-    const registrationPromise = (async () => {
-      // Check connection state
-      if (mongoose.connection.readyState !== 1) {
-        throw new Error('Database not connected');
-      }
-
-      const { email, username } = req.body;
-      
-      // Use lean() for faster queries
-      const existingUser = await User.findOne({
-        $or: [{ email }, { username }]
-      }).lean().maxTimeMS(5000);
-      
-      if (existingUser) {
-        return res.status(400).json({
-          message: 'User already exists',
-          field: existingUser.email === email ? 'email' : 'username'
-        });
-      }
-
-      const user = new User(req.body);
-      await user.save({ timeout: 5000 });
-      
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-      
-      return res.status(201).json({
-        message: 'Registration successful',
-        token,
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username
-        }
-      });
-    })();
-
-    // Race between timeout and registration
-    await Promise.race([registrationPromise, timeoutPromise]);
+    const { email, username } = req.body;
     
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }]
+    }).maxTimeMS(5000);
+    
+    if (existingUser) {
+      return res.status(400).json({
+        message: 'User already exists',
+        field: existingUser.email === email ? 'email' : 'username'
+      });
+    }
+
+    const user = new User(req.body);
+    await user.save();
+    
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
+    
+    return res.status(201).json({
+      message: 'Registration successful',
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        username: user.username
+      }
+    });
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({

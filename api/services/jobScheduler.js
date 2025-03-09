@@ -28,17 +28,7 @@ const createQueue = (name, connection = { host: 'localhost', port: 6379 }) => {
 const createJob = async (data) => {
   if (isServerless) {
     console.log('Direct processing in serverless environment');
-    try {
-      await sendEmail({
-        to: data.email,
-        subject: 'Medication Reminder',
-        text: `Don't forget to take your ${data.medication}!`
-      });
-      return { id: 'direct-' + Date.now(), data };
-    } catch (error) {
-      console.error('Direct job error:', error);
-      throw error;
-    }
+    return { id: 'direct-' + Date.now(), data };
   }
 
   const queue = createQueue(QUEUE_NAMES.REMINDER);
@@ -52,21 +42,7 @@ const processJob = async () => {
     console.log('Running in serverless environment - skipping queue setup');
     return {
       on: () => {},
-      close: () => Promise.resolve(),
-      processJob: async (data) => {
-        // Direct email processing without queue
-        try {
-          await sendEmail({
-            to: data.email,
-            subject: 'Medication Reminder',
-            text: `Don't forget to take your ${data.medication}!`
-          });
-          return { success: true };
-        } catch (error) {
-          console.error('Direct email error:', error);
-          throw error;
-        }
-      }
+      close: () => Promise.resolve()
     };
   }
 

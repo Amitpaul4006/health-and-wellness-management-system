@@ -104,7 +104,7 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Update MongoDB configuration with longer timeouts
+// Update MongoDB configuration - remove unsupported options
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -112,9 +112,8 @@ mongoose.connect(process.env.MONGODB_URI, {
   serverSelectionTimeoutMS: 5000,  // Reduced from 60000
   socketTimeoutMS: 5000,           // Reduced from 45000
   connectTimeoutMS: 5000,          // Reduced from 30000
-  keepAlive: true,
   bufferCommands: false,           // Disable buffering
-  maxPoolSize: 1                   // Minimize connections
+  // Remove keepAlive option as it's not supported
 }).then(() => {
   console.log('MongoDB connected in', process.env.NODE_ENV, 'mode');
 }).catch(err => {
