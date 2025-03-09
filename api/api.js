@@ -4,17 +4,17 @@ const app = require('./server');
 const handler = serverless(app, {
   basePath: '',
   request: (req, event, context) => {
-    // Debug path handling
-    console.log('Raw path:', event.path);
-    console.log('Raw method:', event.httpMethod);
-    console.log('Raw body:', event.body);
-
-    // Remove Netlify Function path prefix if present
-    if (event.path.startsWith('/.netlify/functions/api')) {
-      event.path = event.path.replace('/.netlify/functions/api', '');
-    }
-
-    console.log('Processed path:', event.path);
+    // Clean up path before processing
+    const path = event.path.replace('/.netlify/functions/api', '');
+    req.url = path;
+    req.path = path;
+    
+    console.log('Processing path:', {
+      original: event.path,
+      cleaned: path,
+      method: event.httpMethod
+    });
+    
     return req;
   }
 });
@@ -34,8 +34,6 @@ exports.handler = async (event, context) => {
 
   try {
     const response = await handler(event, context);
-    console.log('Handler response:', response);
-
     return {
       ...response,
       headers: {

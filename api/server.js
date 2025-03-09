@@ -70,20 +70,21 @@ process.on('SIGTERM', async () => {
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
-  console.log('Request:', {
-    method: req.method,
+  console.log('Request received:', {
+    url: req.url,
     path: req.path,
+    method: req.method,
     body: req.body
   });
   next();
 });
 
-// Mount routes without /api prefix
+// Mount routes at root level
 app.use('/auth', authRoutes);
 app.use('/medications', medicationRoutes);
 app.use('/reports', reportRoutes);
 
-// Test route to verify API
+// Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
