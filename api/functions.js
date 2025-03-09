@@ -1,15 +1,21 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
-const handler = serverless(app);
+// Create handler with custom configuration
+const handler = serverless(app, {
+  basePath: ''
+});
 
 exports.handler = async (event, context) => {
-  // Debug logging
-  console.log('Original path:', event.path);
-  console.log('HTTP method:', event.httpMethod);
-  console.log('Headers:', event.headers);
+  console.log('Request details:', {
+    path: event.path,
+    method: event.httpMethod,
+    body: event.body
+  });
 
-  // Handle CORS preflight
+  // Remove function path prefix
+  event.path = event.path.replace('/.netlify/functions/api', '');
+  
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -21,32 +27,26 @@ exports.handler = async (event, context) => {
     };
   }
 
-  // Clean path
-  const cleanPath = event.path
-    .replace('/.netlify/functions/api', '')
-    .replace('/api', '') || '/';
-  
-  event.path = cleanPath;
-  console.log('Cleaned path:', cleanPath);
-
   try {
-    const response = await handler(event, context);
-    console.log('Response:', response);
+    const result = await handler(event, context);
     return {
-      ...response,
+      ...result,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Content-Type': 'application/json',
-        ...response.headers,
+        ...result.headers
       }
     };
   } catch (error) {
     console.error('Function error:', error);
     return {
-      statusCode: 500,
-      body: JSON.stringify({ message: error.message || 'Internal server error' }),
+      statusCode: error.statusCode || 500,
+      body: JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        path: event.path 
+      }),
       headers: {
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*'

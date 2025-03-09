@@ -39,3 +39,4 @@
   directory = "api"
   node_bundler = "esbuild"
   included_files = ["api/**/*"]
+  external_node_modules = ["express"]
