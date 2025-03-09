@@ -1,7 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
@@ -9,8 +9,24 @@ const { processJob } = require('./services/jobScheduler');
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// Environment-aware CORS
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://managehealthandwellness.netlify.app',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Add request logging middleware
@@ -50,9 +66,9 @@ process.on('SIGTERM', async () => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);  // Mount auth routes
-app.use('/api/medications', medicationRoutes);
-app.use('/api/reports', reportRoutes);
+app.use('/auth', authRoutes);  // Note: removed /api prefix
+app.use('/medications', medicationRoutes);
+app.use('/reports', reportRoutes);
 
 // More detailed error handling
 app.use((err, req, res, next) => {
@@ -72,21 +88,20 @@ app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Connect to MongoDB with additional options
+// Environment-aware database connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
   retryWrites: true,
 })
-.then(() => console.log('Connected to MongoDB Atlas'))
+.then(() => console.log('MongoDB connected:', 
+  process.env.NODE_ENV === 'production' ? 'Production DB' : 'Development DB'))
 .catch(err => console.error('MongoDB connection error:', err));
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  processJob().then(() => {
-    console.log('Job processor worker initialized');
-  }).catch(err => {
-    console.error('Failed to initialize job processor worker:', err);
-  });
-});
+// Export for both environments
+if (process.env.NODE_ENV === 'production') {
+  module.exports = app;
+} else {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}

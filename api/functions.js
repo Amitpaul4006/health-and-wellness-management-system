@@ -1,10 +1,11 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
+// Convert express app to serverless function
 const handler = serverless(app);
 
 exports.handler = async (event, context) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,

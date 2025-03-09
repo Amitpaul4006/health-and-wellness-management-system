@@ -8,15 +8,25 @@ const api = axios.create({
   }
 });
 
-// Add auth interceptor
+// Interceptors for both environments
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  console.log('API Request:', config.url);
   return config;
 });
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+// Service exports
 export const authService = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
@@ -26,8 +36,11 @@ export const authService = {
 export const medicationService = {
   getAll: () => api.get('/medications'),
   add: (data) => api.post('/medications/add', data),
-  updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status }),
-  generateReport: () => api.get('/reports/generate')
+  updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status })
+};
+
+export const reportService = {
+  generate: () => api.post('/reports/generate')
 };
 
 export default api;

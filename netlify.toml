@@ -18,6 +18,13 @@
   API_URL = "https://healthandwellnessmanagement.netlify.app/api"
   REACT_APP_API_URL = "/.netlify/functions/api"
 
+[[headers]]
+  for = "/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
