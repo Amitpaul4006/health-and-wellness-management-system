@@ -3,8 +3,10 @@ import { TextField, Button, Box } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../../services/api';
+import { useStyles } from '../../styles/LoginForm.styles';
 
 function LoginForm() {
+  const classes = useStyles();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -22,9 +24,14 @@ function LoginForm() {
   };
 
   return (
-    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+    <Box component="form" onSubmit={handleSubmit} className={classes.form}>
+      {error && (
+        <Alert severity="error" className={classes.errorAlert}>
+          {error}
+        </Alert>
+      )}
       <TextField
+        className={classes.input}
         margin="normal"
         required
         fullWidth
@@ -34,6 +41,7 @@ function LoginForm() {
         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
       />
       <TextField
+        className={classes.input}
         margin="normal"
         required
         fullWidth
@@ -42,17 +50,11 @@ function LoginForm() {
         value={formData.password}
         onChange={(e) => setFormData({ ...formData, password: e.target.value })}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+      <Box className={classes.buttonContainer}>
         <Button
           type="submit"
           variant="contained"
-          sx={{
-            mt: 3,
-            mb: 2,
-            width: '60%', // Reduced from 100% or auto
-            py: 1,
-            fontSize: '0.9rem'
-          }}
+          className={classes.submitButton}
         >
           Sign In
         </Button>

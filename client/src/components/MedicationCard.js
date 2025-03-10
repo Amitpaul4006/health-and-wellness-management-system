@@ -11,27 +11,12 @@ import {
   Chip
 } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
-import { makeStyles } from '@material-ui/core/styles';
 import { LocalHospital, CalendarToday, Schedule, MoreVert } from '@material-ui/icons';
-import axios from 'axios';
-import API_URL from '../config/api';
 import { medicationService } from '../services/api';
+import { useStyles } from '../styles/MedicationCard.styles';
 
-const useStyles = makeStyles((theme) => ({
-  card: {
-    marginBottom: theme.spacing(2),
-    boxShadow: theme.shadows[3],
-    '&:hover': {
-      boxShadow: theme.shadows[6],
-      transform: 'scale(1.01)',
-      transition: 'all 0.2s'
-    }
-  },
-  // ...add other styles...
-}));
-
-function MedicationCard({ medication, onUpdate }) {
-  const classes = useStyles(); // Add this line
+const MedicationCard = ({ medication, onUpdate }) => {
+  const classes = useStyles();
   const [anchorEl, setAnchorEl] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +31,6 @@ function MedicationCard({ medication, onUpdate }) {
 
   const handleStatusUpdate = async (newStatus) => {
     try {
-      setLoading(true);
       await medicationService.updateStatus(medication._id, newStatus);
       await onUpdate();
     } catch (error) {
@@ -60,24 +44,24 @@ function MedicationCard({ medication, onUpdate }) {
   return (
     <>
       <Card className={classes.card}>
-        <CardContent>
-          <Box style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <Box style={{ display: 'flex', alignItems: 'center' }}>
-              <LocalHospital style={{ color: '#1976d2', marginRight: 8 }} />
+        <CardContent className={classes.cardContent}>
+          <Box className={classes.header}>
+            <Box className={classes.title}>
+              <LocalHospital className={classes.icon} style={{ color: '#1976d2' }} />
               <Typography variant="h6" component="div">
                 {medication.name}
               </Typography>
             </Box>
-            <IconButton onClick={handleMenuOpen} size="small">
+            <IconButton onClick={handleMenuOpen} size="small" className={classes.menuButton}>
               <MoreVert />
             </IconButton>
           </Box>
           
-          <Typography color="text.secondary" style={{ marginBottom: 24 }}>
+          <Typography className={classes.description}>
             {medication.description}
           </Typography>
 
-          <Box style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <Box className={classes.chipContainer}>
             <Chip
               icon={<CalendarToday />}
               label={medication.type === 'recurring' ? 'Recurring' : 'One-time'}
@@ -96,7 +80,7 @@ function MedicationCard({ medication, onUpdate }) {
               label={medication.status === 'done' ? 'Completed' : 'Pending'}
               color={medication.status === 'done' ? 'success' : 'warning'}
               size="small"
-              style={{ fontWeight: 'bold' }}
+              className={classes.statusChip}
             />
           </Box>
 

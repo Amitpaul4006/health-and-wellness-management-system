@@ -15,38 +15,13 @@ import {
   Paper,
   IconButton
 } from '@material-ui/core';
-import { makeStyles } from '@material-ui/core/styles';
 import { ExitToApp, Add, LocalHospital } from '@material-ui/icons';
 import MedicationCard from '../components/MedicationCard';
-import axios from 'axios';
 import jwt_decode from 'jwt-decode'; // Add this import
 import ErrorDialog from '../components/ErrorDialog';
 import ReportButton from '../components/ReportButton';
 import { medicationService, authService } from '../services/api';
-
-const useStyles = makeStyles((theme) => ({
-  styledPaper: {
-    padding: theme.spacing(3),
-    margin: theme.spacing(2, 0),
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    boxShadow: theme.shadows[3],
-  },
-  root: {
-    minHeight: '100vh',
-    backgroundColor: '#f0f7ff',
-    backgroundImage: 'linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%)',
-  },
-  appBar: {
-    backgroundColor: '#2196f3'
-  },
-  addButton: {
-    marginTop: theme.spacing(2),
-    backgroundColor: '#2e7d32',
-    '&:hover': {
-      backgroundColor: '#1b5e20'
-    }
-  }
-}));
+import { useStyles } from '../styles/Dashboard.styles';
 
 const Dashboard = () => {
   const classes = useStyles();
@@ -103,12 +78,7 @@ const Dashboard = () => {
     e.preventDefault();
     try {
       validateForm(form);
-      const token = localStorage.getItem('token');
       
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
       const medicationData = {
         name: form.name.trim(),
         description: form.description.trim(),
@@ -124,25 +94,15 @@ const Dashboard = () => {
         } : undefined
       };
 
-      const response = await axios.post(
-        'http://localhost:5000/api/medications/add', 
-        medicationData,
-        {
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data) {
-        setForm({ 
-          name: '', description: '', type: 'one-time', 
-          date: '', time: '', recurrence: '', 
-          dayOfWeek: '', startDate: '', endDate: '' 
-        });
-        await refreshMedications();
-      }
+      await medicationService.add(medicationData);
+      
+      setForm({ 
+        name: '', description: '', type: 'one-time', 
+        date: '', time: '', recurrence: '', 
+        dayOfWeek: '', startDate: '', endDate: '' 
+      });
+      
+      await refreshMedications();
     } catch (error) {
       setError({
         show: true,
@@ -173,10 +133,8 @@ const Dashboard = () => {
 
   const refreshMedications = async () => {
     try {
-      const { data } = await axios.get('http://localhost:5000/api/medications', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      setMedications(data);
+      const response = await medicationService.getAll();
+      setMedications(response.data);
     } catch (error) {
       setError({
         show: true,

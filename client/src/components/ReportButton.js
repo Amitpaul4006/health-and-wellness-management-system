@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { Button, CircularProgress, Snackbar } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { reportService } from '../services/api';
+import { useStyles } from '../styles/ReportButton.styles';
 
 const ReportButton = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState('');
+  const classes = useStyles({ loading });
 
   const handleGenerateReport = async () => {
     try {
@@ -28,13 +30,15 @@ const ReportButton = () => {
         color="primary"
         onClick={handleGenerateReport}
         disabled={loading}
-        sx={{ 
-          mt: 2, 
-          width: '30%',  
-          mb: 2 // Add some space below the button
-        }}
+        className={classes.progressButton}
       >
-        {loading ? <CircularProgress size={24} /> : 'Generate Weekly Report'}
+        <span className={classes.buttonText}>Generate Weekly Report</span>
+        {loading && (
+          <CircularProgress 
+            size={24} 
+            className={classes.progressIndicator}
+          />
+        )}
       </Button>
       <Snackbar open={!!error} autoHideDuration={6000} onClose={() => setError('')}>
         <Alert severity="error" onClose={() => setError('')}>
