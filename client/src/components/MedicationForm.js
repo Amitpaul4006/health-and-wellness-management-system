@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { medicationService } from '../services/api';
-import { TextField, Button, Grid, FormControl, InputLabel, Select, MenuItem } from '@material-ui/core';
+import { Grid, TextField } from '@material-ui/core';  // Only keep what we're using
 
 const MedicationForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({

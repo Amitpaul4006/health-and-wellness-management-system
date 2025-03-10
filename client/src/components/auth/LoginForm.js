@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { TextField, Button, Box } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../../services/api';
 
 function LoginForm() {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -11,20 +12,12 @@ function LoginForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-      
-      if (!response.ok) throw new Error(data.message);
-      
-      localStorage.setItem('token', data.token);
+      const response = await authService.login(formData);
+      localStorage.setItem('token', response.data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || 'Login failed');
+      console.error('Login error:', err);
     }
   };
 
