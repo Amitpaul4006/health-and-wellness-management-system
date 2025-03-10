@@ -9,7 +9,7 @@
   publish = "client/build"
 
 [build.environment]
-  NODE_VERSION = "16"
+  NODE_VERSION = "18.x"
   CI = "false"
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"
@@ -36,7 +36,9 @@
 [functions]
   directory = "api"
   node_bundler = "esbuild"
-  included_files = ["api/**/*"]
+  included_files = ["api/**"]
+  external_node_modules = ["nodemailer"]
 
 [functions.api]
   included_files = ["api/**/*"]
+  timeout = 30

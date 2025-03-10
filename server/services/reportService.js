@@ -1,32 +1,36 @@
-const { Queue } = require('bullmq');
+const { sendEmail } = require('../config/emailConfig');
 const Medication = require('../models/Medication');
 const User = require('../models/User');
-const { generateCSV } = require('../utils/csvGenerator');
 
-const reportQueue = new Queue('reportQueue', {
-  connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379
+const generateReport = async (userId, userEmail) => {
+  try {
+    // Get medications
+    const medications = await Medication.find({ user: userId });
+    
+    // Generate CSV content
+    const csvHeader = 'Name,Description,Type,Status,Date,Time\n';
+    const csvRows = medications.map(med => 
+      `${med.name},${med.description || ''},${med.type},${med.status},${med.date},${med.time}`
+    ).join('\n');
+    const csvContent = csvHeader + csvRows;
+
+    // Send email directly without queue in serverless
+    await sendEmail({
+      to: userEmail,
+      subject: 'Medication Report',
+      html: '<h2>Your Medication Report</h2><p>Please find your medication report attached.</p>',
+      attachments: [{
+        filename: 'medications.csv',
+        content: csvContent,
+        contentType: 'text/csv'
+      }]
+    });
+
+    return { success: true, message: 'Report sent successfully' };
+  } catch (error) {
+    console.error('Report generation error:', error);
+    throw error;
   }
-});
-
-const generateWeeklyReport = async (userId) => {
-  const user = await User.findById(userId);
-  if (!user) throw new Error('User not found');
-
-  const medications = await Medication.find({
-    userId,
-    scheduledDate: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-  });
-
-  const csvData = generateCSV(medications);
-
-  await reportQueue.add('sendReport', {
-    email: user.email,
-    csvData
-  });
 };
 
-module.exports = {
-  generateWeeklyReport
-};
+module.exports = { generateReport };

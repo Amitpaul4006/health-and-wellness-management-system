@@ -1,6 +1,8 @@
 const { Queue, Worker } = require('bullmq');
 const { sendEmail } = require('../config/emailConfig');
 
+const isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+
 let queues = [];
 let workers = [];
 
@@ -16,6 +18,22 @@ const createQueue = (name, connection = { host: 'localhost', port: 6379 }) => {
 };
 
 const createJob = async (data) => {
+  if (isServerless) {
+    // Direct email sending in serverless environment
+    try {
+      await sendEmail({
+        to: data.email,
+        subject: data.type === 'reminder' ? 'Medication Reminder' : 'Medication Report',
+        html: data.html,
+        attachments: data.attachments
+      });
+      return { success: true };
+    } catch (error) {
+      console.error('Direct email sending error:', error);
+      throw error;
+    }
+  }
+
   const queue = createQueue(QUEUE_NAMES.REMINDER);
   const job = await queue.add('reminder', data);
   return job;
