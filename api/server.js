@@ -79,6 +79,47 @@ app.use((req, res, next) => {
   next();
 });
 
+// Wait for MongoDB connection before handling requests
+const connectDB = async () => {
+  try {
+    await mongoose.connect(process.env.MONGODB_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      retryWrites: true,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      bufferCommands: false
+    });
+    console.log('MongoDB connected');
+    return true;
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+    return false;
+  }
+};
+
+// Add connection middleware
+app.use(async (req, res, next) => {
+  if (!mongoose.connection.readyState) {
+    try {
+      const connected = await connectDB();
+      if (!connected) {
+        return res.status(500).json({ 
+          message: 'Database connection failed',
+          error: 'Could not connect to database'
+        });
+      }
+    } catch (err) {
+      return res.status(500).json({ 
+        message: 'Database connection failed',
+        error: err.message
+      });
+    }
+  }
+  next();
+});
+
 // Mount routes at root level
 app.use('/auth', authRoutes);
 app.use('/medications', medicationRoutes);

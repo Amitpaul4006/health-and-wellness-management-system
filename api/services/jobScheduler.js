@@ -1,6 +1,6 @@
 const { sendEmail } = require('../config/emailConfig');
 
-// Skip Redis/Bull in serverless environment
+// Detect serverless environment
 const isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_VERSION;
 
 let Queue, Worker;
@@ -25,10 +25,11 @@ const createQueue = (name, connection = { host: 'localhost', port: 6379 }) => {
   return queue;
 };
 
+// Mock queue for serverless
 const createJob = async (data) => {
   if (isServerless) {
-    console.log('Direct processing in serverless environment');
-    return { id: 'direct-' + Date.now(), data };
+    console.log('Running in serverless mode - skipping queue');
+    return { id: Date.now(), data };
   }
 
   const queue = createQueue(QUEUE_NAMES.REMINDER);
@@ -36,10 +37,10 @@ const createJob = async (data) => {
   return job;
 };
 
+// Mock worker for serverless
 const processJob = async () => {
-  // In serverless, just return a mock worker
   if (isServerless) {
-    console.log('Running in serverless environment - skipping queue setup');
+    console.log('Running in serverless mode - returning mock worker');
     return {
       on: () => {},
       close: () => Promise.resolve()

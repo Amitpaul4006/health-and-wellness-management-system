@@ -49,31 +49,47 @@ router.post('/register', async (req, res) => {
 
     const { email, username } = req.body;
     
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
-    }).maxTimeMS(5000);
-    
-    if (existingUser) {
-      return res.status(400).json({
-        message: 'User already exists',
-        field: existingUser.email === email ? 'email' : 'username'
-      });
-    }
-
-    const user = new User(req.body);
-    await user.save();
-    
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
-    
-    return res.status(201).json({
-      message: 'Registration successful',
-      token,
-      user: {
-        id: user._id,
-        email: user.email,
-        username: user.username
+    // Use timeout promise for database operations
+    const dbOperation = async () => {
+      const existingUser = await User.findOne({
+        $or: [{ email }, { username }]
+      }).maxTimeMS(5000);
+      
+      if (existingUser) {
+        return res.status(400).json({
+          message: 'User already exists',
+          field: existingUser.email === email ? 'email' : 'username'
+        });
       }
-    });
+      
+      const user = new User(req.body);
+      await user.save();
+      
+      const token = jwt.sign(
+        { userId: user._id },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      
+      return res.status(201).json({
+        message: 'Registration successful',
+        token,
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username
+        }
+      });
+    };
+    
+    // Execute with timeout
+    await Promise.race([
+      dbOperation(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database operation timed out')), 5000)
+      )
+    ]);
+
   } catch (error) {
     console.error('Registration error:', error);
     res.status(500).json({
