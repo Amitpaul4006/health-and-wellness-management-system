@@ -22,6 +22,7 @@ import axios from 'axios';
 import jwt_decode from 'jwt-decode'; // Add this import
 import ErrorDialog from '../components/ErrorDialog';
 import ReportButton from '../components/ReportButton';
+import { medicationService, authService } from '../services/api';
 
 const useStyles = makeStyles((theme) => ({
   styledPaper: {
@@ -64,12 +65,6 @@ const Dashboard = () => {
   ];
 
   useEffect(() => {
-    const fetchMedications = async () => {
-      const { data } = await axios.get('http://localhost:5000/api/medications', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      setMedications(data);
-    };
     fetchMedications();
   }, []);
 
@@ -156,12 +151,24 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async (allDevices) => {
-    await axios.post('http://localhost:5000/api/auth/logout', { allDevices }, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    localStorage.removeItem('token');
-    window.location = '/';
+  const handleLogout = async () => {
+    try {
+      await authService.logout();
+      localStorage.removeItem('token');
+      window.location = '/';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const fetchMedications = async () => {
+    try {
+      const response = await medicationService.getAll();
+      setMedications(response.data);
+    } catch (error) {
+      console.error('Error fetching medications:', error);
+      setError('Failed to load medications');
+    }
   };
 
   const refreshMedications = async () => {

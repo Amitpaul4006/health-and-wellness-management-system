@@ -2,18 +2,22 @@ import axios from 'axios';
 import API_URL from '../config/api';
 
 const api = axios.create({
-  baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  baseURL: API_URL
 });
 
-// Debug interceptor
-api.interceptors.request.use(config => {
-  console.log('Request:', config.method.toUpperCase(), config.url);
-  return config;
-});
+// Add request interceptor to add token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
+// Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -22,21 +26,28 @@ api.interceptors.response.use(
   }
 );
 
-// Service exports
+// All operations use this configured api instance:
 export const authService = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  logout: () => api.post('/auth/logout')
+  logout: () => api.post('/auth/logout'),
+  verifyEmail: (token) => api.post('/auth/verify-email', { token }),
+  resetPassword: (data) => api.post('/auth/reset-password', data)
 };
 
 export const medicationService = {
   getAll: () => api.get('/medications'),
   add: (data) => api.post('/medications/add', data),
-  updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status })
+  updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status }),
+  getReminders: () => api.get('/medications/reminders'),
+  markDone: (id) => api.patch(`/medications/${id}/done`),
+  updateReminder: (id, data) => api.put(`/medications/${id}/reminder`, data)
 };
 
 export const reportService = {
-  generate: () => api.post('/reports/generate')
+  generate: () => api.post('/reports/generate'),
+  getWeeklyReport: () => api.get('/reports/weekly'),
+  getMonthlyReport: () => api.get('/reports/monthly')
 };
 
 export default api;

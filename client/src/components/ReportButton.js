@@ -1,34 +1,21 @@
 import React, { useState } from 'react';
 import { Button, CircularProgress, Snackbar } from '@material-ui/core';
 import { Alert } from '@material-ui/lab';
-import axios from 'axios';
+import { reportService } from '../services/api';
 
 const ReportButton = () => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState('');
 
   const handleGenerateReport = async () => {
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
     try {
-      const token = localStorage.getItem('token');
-      console.log("token", token);
-      if (!token) throw new Error('No authentication token found');
-
-      console.log("calling axios post");
-      await axios.post('http://localhost:5000/api/reports/generate', {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      console.log("axios post done");
-
+      setLoading(true);
+      await reportService.generate();
       setSuccess('Report generation initiated. You will receive an email shortly.');
-    } catch (err) {
-      console.error("Error:", err);
-      setError(err.response?.data?.error || 'Failed to initiate report generation');
+    } catch (error) {
+      setError('Failed to generate report');
+      console.error('Report generation error:', error);
     } finally {
       setLoading(false);
     }

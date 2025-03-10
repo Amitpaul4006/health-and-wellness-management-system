@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Box, Paper, Typography, CircularProgress } from '@material-ui/core';
 import { makeStyles } from '@material-ui/core/styles';
-import axios from 'axios';
+import { medicationService } from '../services/api';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -27,7 +27,7 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
-const MarkDone = () => {
+const MarkDone = ({ medicationId, onUpdate }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState('processing');
@@ -42,27 +42,37 @@ const MarkDone = () => {
           return;
         }
 
-        await axios.patch(
-          `http://localhost:5000/api/medications/${id}/status`,
-          { status: 'done' },
-          {
-            headers: { 
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        await medicationService.updateStatus(medicationId || id, 'done');
+        
+        if (onUpdate) {
+          onUpdate();
+        }
 
         setStatus('success');
-        setTimeout(() => navigate('/dashboard'), 2000);
+        setTimeout(() => {
+          if (medicationId) {
+            onUpdate?.();
+          } else {
+            navigate('/dashboard');
+          }
+        }, 2000);
       } catch (error) {
+        console.error('Error updating status:', error);
         setStatus('error');
-        setTimeout(() => navigate('/dashboard'), 2000);
+        setTimeout(() => {
+          if (medicationId) {
+            onUpdate?.();
+          } else {
+            navigate('/dashboard');
+          }
+        }, 2000);
       }
     };
 
-    updateStatus();
-  }, [id, navigate]);
+    if (medicationId || id) {
+      updateStatus();
+    }
+  }, [id, navigate, medicationId, onUpdate]);
 
   const getStatusMessage = () => {
     switch(status) {
@@ -76,6 +86,10 @@ const MarkDone = () => {
         return 'Processing...';
     }
   };
+
+  if (!medicationId && !id) {
+    return <Typography color="error">No medication ID provided</Typography>;
+  }
 
   return (
     <Box className={classes.root}>
