@@ -79,19 +79,22 @@ app.use((req, res, next) => {
   next();
 });
 
-// Wait for MongoDB connection before handling requests
+// MongoDB connection with updated options
 const connectDB = async () => {
   try {
+    if (mongoose.connection.readyState) {
+      return true;
+    }
+    
     await mongoose.connect(process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      retryWrites: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 5000,
       connectTimeoutMS: 5000,
+      // Remove deprecated options
       bufferCommands: false
     });
-    console.log('MongoDB connected');
+    
+    console.log('MongoDB connected in', process.env.NODE_ENV, 'mode');
     return true;
   } catch (err) {
     console.error('MongoDB connection error:', err);
@@ -99,25 +102,26 @@ const connectDB = async () => {
   }
 };
 
-// Add connection middleware
+// Add connection middleware before routes
 app.use(async (req, res, next) => {
-  if (!mongoose.connection.readyState) {
-    try {
+  try {
+    if (!mongoose.connection.readyState) {
       const connected = await connectDB();
       if (!connected) {
-        return res.status(500).json({ 
-          message: 'Database connection failed',
-          error: 'Could not connect to database'
+        return res.status(503).json({
+          message: 'Service temporarily unavailable',
+          error: 'Database connection failed'
         });
       }
-    } catch (err) {
-      return res.status(500).json({ 
-        message: 'Database connection failed',
-        error: err.message
-      });
     }
+    next();
+  } catch (err) {
+    console.error('Middleware connection error:', err);
+    return res.status(503).json({
+      message: 'Service temporarily unavailable',
+      error: err.message
+    });
   }
-  next();
 });
 
 // Mount routes at root level
@@ -143,22 +147,6 @@ app.use((err, req, res, next) => {
 // Route not found handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Route not found' });
-});
-
-// Update MongoDB configuration - remove unsupported options
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  retryWrites: true,
-  serverSelectionTimeoutMS: 5000,  // Reduced from 60000
-  socketTimeoutMS: 5000,           // Reduced from 45000
-  connectTimeoutMS: 5000,          // Reduced from 30000
-  bufferCommands: false,           // Disable buffering
-  // Remove keepAlive option as it's not supported
-}).then(() => {
-  console.log('MongoDB connected in', process.env.NODE_ENV, 'mode');
-}).catch(err => {
-  console.error('MongoDB connection error:', err);
 });
 
 // More aggressive error handling

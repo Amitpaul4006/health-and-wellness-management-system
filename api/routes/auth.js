@@ -42,18 +42,22 @@ router.post('/register', async (req, res) => {
   try {
     console.log('Registration attempt for:', req.body.email);
     
-    // Check MongoDB connection first
-    if (mongoose.connection.readyState !== 1) {
-      throw new Error('Database connection not ready');
-    }
+    // MongoDB operations with timeout
+    const executeWithTimeout = async (operation) => {
+      return Promise.race([
+        operation(),
+        new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Operation timed out')), 5000)
+        )
+      ]);
+    };
 
     const { email, username } = req.body;
     
-    // Use timeout promise for database operations
-    const dbOperation = async () => {
+    const result = await executeWithTimeout(async () => {
       const existingUser = await User.findOne({
         $or: [{ email }, { username }]
-      }).maxTimeMS(5000);
+      }).lean();
       
       if (existingUser) {
         return res.status(400).json({
@@ -61,7 +65,7 @@ router.post('/register', async (req, res) => {
           field: existingUser.email === email ? 'email' : 'username'
         });
       }
-      
+
       const user = new User(req.body);
       await user.save();
       
@@ -80,19 +84,12 @@ router.post('/register', async (req, res) => {
           username: user.username
         }
       });
-    };
-    
-    // Execute with timeout
-    await Promise.race([
-      dbOperation(),
-      new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Database operation timed out')), 5000)
-      )
-    ]);
+    });
 
+    return result;
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Registration failed',
       error: error.message
     });
