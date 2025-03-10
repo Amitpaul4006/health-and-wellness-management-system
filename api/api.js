@@ -1,14 +1,24 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
-// Add environment logging
-console.log('API Environment:', process.env.NODE_ENV);
-console.log('MongoDB URI:', process.env.MONGODB_URI?.substring(0, 20) + '...');
-console.log('Email Config:', process.env.EMAIL_USER ? 'Available' : 'Missing');
+// Environment check logging
+console.log('API Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  isServerless: !!process.env.NETLIFY,
+  hasEmailConfig: !!process.env.EMAIL_USER,
+  hasDBConfig: !!process.env.MONGODB_URI,
+  functionTimeout: process.env.NETLIFY ? '30s' : 'unlimited'
+});
 
-// Update email handling for serverless
 app.use((req, res, next) => {
   req.isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_VERSION;
+  
+  // Add request logging
+  console.log(`${req.method} ${req.path}`, {
+    isServerless: req.isServerless,
+    hasAuth: !!req.headers.authorization
+  });
+  
   next();
 });
 

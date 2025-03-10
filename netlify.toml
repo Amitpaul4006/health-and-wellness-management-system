@@ -9,7 +9,8 @@
   publish = "client/build"
 
 [build.environment]
-  NODE_VERSION = "18.x"
+  # Update to specific Node version instead of x
+  NODE_VERSION = "18.17.0"
   CI = "false"
   DISABLE_ESLINT_PLUGIN = "true"
   NPM_FLAGS = "--legacy-peer-deps"

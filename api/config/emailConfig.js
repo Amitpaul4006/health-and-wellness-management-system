@@ -8,25 +8,20 @@ const sendEmail = async (emailData) => {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_APP_PASSWORD
       },
-      // Add timeout for both environments
-      connectionTimeout: 8000,
-      socketTimeout: 8000
+      connectionTimeout: 5000,  // Reduced timeout
+      socketTimeout: 5000      // Reduced timeout
     });
 
-    const mailOptions = {
+    console.log(`Attempting to send email to: ${emailData.to}`);
+    const result = await transporter.sendMail({
       from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
       ...emailData
-    };
+    });
 
-    // Add timeout for serverless environment
-    const emailPromise = transporter.sendMail(mailOptions);
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Email timeout')), 8000)
-    );
-
-    return await Promise.race([emailPromise, timeoutPromise]);
+    console.log(`Email sent successfully. MessageId: ${result.messageId}`);
+    return result;
   } catch (error) {
-    console.error('Email sending error:', error);
+    console.error(`Email sending failed:`, error);
     throw error;
   }
 };

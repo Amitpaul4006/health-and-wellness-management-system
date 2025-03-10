@@ -1,53 +1,31 @@
-const { Queue } = require('bullmq');
 const Medication = require('../models/Medication');
-const User = require('../models/User');
-const { generateCSV } = require('../utils/csvGenerator');
 const { sendEmail } = require('../config/emailConfig');
 
-const reportQueue = new Queue('reportQueue', {
-  connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: process.env.REDIS_PORT || 6379
-  }
-});
-
-const generateWeeklyReport = async (userId) => {
-  const user = await User.findById(userId);
-  if (!user) throw new Error('User not found');
-
-  const medications = await Medication.find({
-    userId,
-    scheduledDate: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-  });
-
-  const csvData = generateCSV(medications);
-
-  await reportQueue.add('sendReport', {
-    email: user.email,
-    csvData
-  });
-};
-
 const generateReport = async (userId, userEmail) => {
+  console.log(`Starting report generation for user: ${userId}`);
   try {
-    console.log(`Generating report for user ${userId}`);
     const medications = await Medication.find({ user: userId });
     
-    // Generate CSV
-    const csvData = generateCSVContent(medications);
-    
-    // Send email in both environments
+    if (!medications.length) {
+      console.log('No medications found');
+      return { success: false, message: 'No medications to report' };
+    }
+
+    const csvContent = generateCSVContent(medications);
+    console.log(`Generated CSV with ${medications.length} records`);
+
     await sendEmail({
       to: userEmail,
       subject: 'Your Medication Report',
-      html: '<h2>Medication Report</h2><p>Please find your medication report attached.</p>',
+      html: `<h2>Your Medication Report</h2><p>Attached is your report with ${medications.length} medications.</p>`,
       attachments: [{
-        filename: 'medications.csv',
-        content: csvData
+        filename: `medications-${new Date().toISOString().split('T')[0]}.csv`,
+        content: csvContent,
+        contentType: 'text/csv'
       }]
     });
 
-    return { success: true };
+    return { success: true, message: 'Report sent successfully' };
   } catch (error) {
     console.error('Report generation failed:', error);
     throw error;
@@ -62,7 +40,4 @@ const generateCSVContent = (medications) => {
   return header + rows;
 };
 
-module.exports = {
-  generateWeeklyReport,
-  generateReport
-};
+module.exports = { generateReport };
