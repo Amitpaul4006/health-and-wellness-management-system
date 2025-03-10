@@ -17,6 +17,9 @@
   NODE_OPTIONS = "--max_old_space_size=4096"
   MONGODB_URI = "mongodb+srv://amitpaul4006:bQrijN7EsQe3mcoz@cluster0.yxipk.mongodb.net/healthwellness?retryWrites=true&w=majority&appName=Cluster0"
   NODE_ENV = "production"
+  EMAIL_USER = "${EMAIL_USER}"
+  EMAIL_APP_PASSWORD = "${EMAIL_APP_PASSWORD}"
+  EMAIL_FROM = "${EMAIL_FROM}"
 
 [[redirects]]
   from = "/api/*"
@@ -39,6 +42,7 @@
   node_bundler = "esbuild"
   included_files = ["api/**"]
   external_node_modules = ["nodemailer"]
+  timeout = 30
 
 [functions.api]
   included_files = ["api/**/*"]
