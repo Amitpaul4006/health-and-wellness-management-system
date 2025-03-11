@@ -40,7 +40,12 @@
 [functions]
   directory = "api"
   node_bundler = "esbuild"
-  included_files = ["api/**"]
+  included_files = [
+    "api/**",
+    "api/services/**",
+    "api/models/**",
+    "api/config/**"
+  ]
   external_node_modules = ["nodemailer"]
 
 [functions.api]
