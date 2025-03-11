@@ -4,8 +4,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Login route
-router.post('/login', async (req, res) => {
+// Define handlers first
+const loginHandler = async (req, res) => {
   try {
     const { email, password } = req.body;
     console.log('Login attempt:', email);
@@ -26,9 +26,9 @@ router.post('/login', async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({ message: 'Server error' });
   }
-});
+};
 
-router.post('/register', async (req, res) => {
+const registerHandler = async (req, res) => {
   try {
     console.log('Registration attempt for:', req.body.email);
     
@@ -84,9 +84,9 @@ router.post('/register', async (req, res) => {
       error: error.message
     });
   }
-});
+};
 
-router.post('/logout', async (req, res) => {
+const logoutHandler = async (req, res) => {
   try {
     if (req.session) {
       req.session.destroy((err) => {
@@ -106,6 +106,19 @@ router.post('/logout', async (req, res) => {
     console.error('Logout error:', error);
     res.status(500).json({ message: 'Server error during logout' });
   }
-});
+};
 
-module.exports = router;  // Export router instead of functions
+// Add handlers to router
+router.post('/login', loginHandler);
+router.post('/register', registerHandler);
+router.post('/logout', logoutHandler);
+
+// Export both router and handlers
+module.exports = {
+  router,
+  handlers: {
+    login: loginHandler,
+    register: registerHandler,
+    logout: logoutHandler
+  }
+};

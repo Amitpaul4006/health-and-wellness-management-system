@@ -1,5 +1,6 @@
 const serverless = require('serverless-http');
 const app = require('./server');
+const auth = require('./routes/auth');
 
 // Logging only - no route definitions here
 console.log('API Environment:', {
@@ -25,7 +26,7 @@ const { login, register } = require('./routes/auth');
 const { generateReport } = require('./services/reportService');
 
 // Direct route definitions
-app.post('/auth/login', login);
+app.post('/auth/login', auth.handlers.login);
 app.post('/auth/register', register);
 
 // Medication routes (protected)

@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/auth');
+const auth = require('./routes/auth');
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const { processJob } = require('./services/jobScheduler');
@@ -34,7 +34,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Mount routes at root level
-app.use('/auth', require('./routes/auth'));
+app.use('/auth', auth.router);
 app.use('/medications', require('./routes/medications'));
 app.use('/reports', require('./routes/report'));
 
