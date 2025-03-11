@@ -4,6 +4,13 @@ import LandingPage from './pages/LandingPage';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import MarkDone from './components/MarkDone';
+import { API_URL } from './config/api';
+
+// Log API configuration on app start
+console.log('API Configuration:', {
+  url: API_URL,
+  environment: process.env.NODE_ENV
+});
 
 function App() {
   return (
