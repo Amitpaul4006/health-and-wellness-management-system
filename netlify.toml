@@ -42,8 +42,7 @@
   node_bundler = "esbuild"
   included_files = ["api/**"]
   external_node_modules = ["nodemailer"]
-  timeout = 30
 
 [functions.api]
   included_files = ["api/**/*"]
-  timeout = 30
+  maxDuration = 30
