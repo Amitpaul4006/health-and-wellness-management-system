@@ -1,41 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { body } = require('express-validator');
-const bcrypt = require('bcryptjs');
 
-// Validation middleware
-const validateLogin = [
-  body('email').isEmail().withMessage('Please enter a valid email'),
-  body('password').exists().withMessage('Password is required')
-];
+// Login route
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log('Login attempt:', email);
+    
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-const validateRegister = [
-  body('name')
-    .notEmpty()
-    .trim()
-    .withMessage('Name is required')
-    .isLength({ min: 2 })
-    .withMessage('Name must be at least 2 characters long'),
-  body('email')
-    .notEmpty()
-    .withMessage('Email is required')
-    .isEmail()
-    .withMessage('Please enter a valid email')
-    .normalizeEmail(),
-  body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
-    .matches(/^(?=.*[A-Za-z])(?=.*\d)/)
-    .withMessage('Password must contain at least one letter and one number')
-];
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
 
-// Routes with logging
-router.post('/login', validateLogin, (req, res, next) => {
-    console.log('Login attempt:', req.body.email);
-    authController.login(req, res, next);
+    res.json({ token, userId: user._id });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 router.post('/register', async (req, res) => {
@@ -118,53 +108,4 @@ router.post('/logout', async (req, res) => {
   }
 });
 
-const login = async (req, res) => {
-  try {
-    console.log('Processing login for:', req.body.email);
-    const { email, password } = req.body;
-    const user = await User.findOne({ email });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.json({ token, userId: user._id });
-  } catch (error) {
-    console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-const register = async (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    if (await User.findOne({ email })) {
-      return res.status(400).json({ message: 'User already exists' });
-    }
-
-    const user = await User.create({
-      email,
-      password: await bcrypt.hash(password, 12),
-      name
-    });
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({ token, userId: user._id });
-  } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-module.exports = { login, register };
+module.exports = router;  // Export router instead of functions

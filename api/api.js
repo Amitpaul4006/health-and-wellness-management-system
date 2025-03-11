@@ -1,13 +1,11 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 
-// Environment logging
+// Logging only - no route definitions here
 console.log('API Environment:', {
   NODE_ENV: process.env.NODE_ENV,
   isServerless: !!process.env.NETLIFY,
-  hasEmailConfig: !!process.env.EMAIL_USER,
-  hasDBConfig: !!process.env.MONGODB_URI,
-  functionTimeout: process.env.NETLIFY ? '30s' : 'unlimited'
+  hasEmailConfig: !!process.env.EMAIL_USER
 });
 
 app.use((req, res, next) => {
@@ -43,8 +41,10 @@ app.post('/reports/generate', async (req, res) => {
   }
 });
 
-// Serverless handler
+// Wrap app with serverless handler
 const handler = serverless(app);
+
+// Export CORS-enabled handler
 exports.handler = async (event, context) => {
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -52,20 +52,32 @@ exports.handler = async (event, context) => {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS'
       }
     };
   }
 
-  const response = await handler(event, context);
-  return {
-    ...response,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Content-Type': 'application/json',
-      ...response.headers
-    }
-  };
+  try {
+    const response = await handler(event, context);
+    return {
+      ...response,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Content-Type': 'application/json',
+        ...response.headers
+      }
+    };
+  } catch (error) {
+    console.error('Handler error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: error.message }),
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    };
+  }
 };

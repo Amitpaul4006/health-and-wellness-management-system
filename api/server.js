@@ -15,7 +15,10 @@ app.use(express.json());
 
 // Simple logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`);
+  console.log(`${req.method} ${req.path}`, {
+    env: process.env.NODE_ENV,
+    isServerless: !!process.env.NETLIFY
+  });
   next();
 });
 
@@ -31,9 +34,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 // Mount routes at root level
-app.use('/auth', authRoutes);
-app.use('/medications', medicationRoutes);
-app.use('/reports', reportRoutes);
+app.use('/auth', require('./routes/auth'));
+app.use('/medications', require('./routes/medications'));
+app.use('/reports', require('./routes/report'));
 
 // Test route
 app.get('/test', (req, res) => {
