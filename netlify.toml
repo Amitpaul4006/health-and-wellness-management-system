@@ -9,7 +9,6 @@
   publish = "client/build"
 
 [build.environment]
-  # Update to specific Node version instead of x
   NODE_VERSION = "18.17.0"
   CI = "false"
   DISABLE_ESLINT_PLUGIN = "true"
@@ -17,19 +16,20 @@
   NODE_OPTIONS = "--max_old_space_size=4096"
   MONGODB_URI = "mongodb+srv://amitpaul4006:bQrijN7EsQe3mcoz@cluster0.yxipk.mongodb.net/healthwellness?retryWrites=true&w=majority&appName=Cluster0"
   NODE_ENV = "production"
-  EMAIL_USER = "${EMAIL_USER}"
-  EMAIL_APP_PASSWORD = "${EMAIL_APP_PASSWORD}"
-  EMAIL_FROM = "${EMAIL_FROM}"
+  EMAIL_USER = "amitpaul4006@gmail.com"
+  EMAIL_APP_PASSWORD = "sude iyan qbrx lrea"
+  EMAIL_FROM = "amitpaul4006@gmail.com"
 
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
-  [redirects.headers]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+
+[redirects.headers]
+  Access-Control-Allow-Origin = "*"
+  Access-Control-Allow-Headers = "Content-Type, Authorization"
+  Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, PATCH, OPTIONS"
 
 [[redirects]]
   from = "/*"
