@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { body } = require('express-validator');
-const authController = require('../controllers/authController');
 const bcrypt = require('bcryptjs');
 
 // Validation middleware
@@ -121,10 +120,10 @@ router.post('/logout', async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    console.log('Login attempt:', req.body.email);
     const { email, password } = req.body;
+    console.log('Login attempt for:', email);
+    
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
@@ -149,8 +148,8 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
   try {
-    console.log('Registration attempt:', req.body.email);
     const { email, password, name } = req.body;
+    console.log('Registration attempt for:', email);
     
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -165,7 +164,6 @@ const register = async (req, res) => {
     });
 
     await user.save();
-
     const token = jwt.sign(
       { userId: user._id },
       process.env.JWT_SECRET,
@@ -179,6 +177,5 @@ const register = async (req, res) => {
   }
 };
 
+// Export only the functions, not the router
 module.exports = { login, register };
-
-module.exports = router;

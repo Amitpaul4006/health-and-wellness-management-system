@@ -1,8 +1,9 @@
 const serverless = require('serverless-http');
 const app = require('./server');
 const auth = require('./middleware/auth');
-const { login, register } = require('./routes/auth');
+const authHandlers = require('./routes/auth');
 
+// Environment logging
 console.log('API Environment:', {
   NODE_ENV: process.env.NODE_ENV,
   isServerless: !!process.env.NETLIFY,
@@ -23,6 +24,10 @@ app.use((req, res, next) => {
   next();
 });
 
+// Add auth routes BEFORE serverless handler setup
+app.post('/auth/login', authHandlers.login);
+app.post('/auth/register', authHandlers.register);
+
 const handler = serverless(app, {
   basePath: '',
   request: (req, event, context) => {
@@ -42,8 +47,6 @@ const handler = serverless(app, {
 });
 
 // Direct route handlers for serverless
-app.post('/auth/login', login);
-app.post('/auth/register', register);
 app.post('/reports/generate', auth, async (req, res) => {
   try {
     const result = await require('./services/reportService').generateReport(req.user.id, req.user.email);
