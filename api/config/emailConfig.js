@@ -3,7 +3,6 @@ const nodemailer = require('nodemailer');
 const sendEmail = async (emailData) => {
   console.log('Sending email with config:', {
     hasUser: !!process.env.EMAIL_USER,
-    to: emailData.to,
     type: emailData.attachments ? 'report' : 'reminder'
   });
 

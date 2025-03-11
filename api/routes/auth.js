@@ -121,6 +121,7 @@ router.post('/logout', async (req, res) => {
 
 const login = async (req, res) => {
   try {
+    console.log('Login attempt:', req.body.email);
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
@@ -148,6 +149,7 @@ const login = async (req, res) => {
 
 const register = async (req, res) => {
   try {
+    console.log('Registration attempt:', req.body.email);
     const { email, password, name } = req.body;
     
     const existingUser = await User.findOne({ email });

@@ -1,8 +1,8 @@
 const serverless = require('serverless-http');
 const app = require('./server');
-const auth = require('./middleware/auth');  // Fix auth import
+const auth = require('./middleware/auth');
+const { login, register } = require('./routes/auth');
 
-// Environment check logging
 console.log('API Environment:', {
   NODE_ENV: process.env.NODE_ENV,
   isServerless: !!process.env.NETLIFY,
@@ -41,10 +41,11 @@ const handler = serverless(app, {
   }
 });
 
-// Update report route
+// Direct route handlers for serverless
+app.post('/auth/login', login);
+app.post('/auth/register', register);
 app.post('/reports/generate', auth, async (req, res) => {
   try {
-    console.log('Report generation for:', req.user?.id);
     const result = await require('./services/reportService').generateReport(req.user.id, req.user.email);
     res.json(result);
   } catch (error) {
@@ -52,10 +53,6 @@ app.post('/reports/generate', auth, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// Add auth routes that don't need middleware
-app.post('/auth/login', require('./routes/auth').login);
-app.post('/auth/register', require('./routes/auth').register);
 
 exports.handler = async (event, context) => {
   // Handle CORS preflight
