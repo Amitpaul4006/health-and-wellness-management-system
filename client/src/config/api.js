@@ -1,14 +1,22 @@
 import axios from 'axios';
 
-// Define API URL based on environment
-export const API_URL = process.env.NODE_ENV === 'production' 
-  ? '/.netlify/functions/api'
+// Define base URL based on environment
+const baseURL = process.env.NODE_ENV === 'production'
+  ? 'https://managementhealthandwellness.netlify.app/.netlify/functions/api'
   : 'http://localhost:5000/api';
 
-// Create axios instance
+console.log('API Configuration:', {
+  environment: process.env.NODE_ENV,
+  baseURL
+});
+
+// Create axios instance with proper configuration
 const api = axios.create({
-  baseURL: API_URL,
-  timeout: process.env.NODE_ENV === 'production' ? 10000 : 30000
+  baseURL,
+  timeout: process.env.NODE_ENV === 'production' ? 10000 : 30000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
 });
 
 // Add auth interceptor
@@ -29,5 +37,4 @@ api.interceptors.response.use(
   }
 );
 
-// Export both the URL and the configured axios instance
-export { api as default };
+export default api;
