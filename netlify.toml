@@ -42,11 +42,10 @@
   node_bundler = "esbuild"
   included_files = [
     "api/**",
-    "api/services/**",
-    "api/models/**",
-    "api/config/**"
+    "api/services/*",
+    "api/models/*"
   ]
-  external_node_modules = ["nodemailer"]
+  external_node_modules = ["bcryptjs", "jsonwebtoken", "mongoose", "nodemailer"]
 
 [functions.api]
   included_files = ["api/**/*"]

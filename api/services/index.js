@@ -1,17 +1,16 @@
 const authService = require('./authService');
 const medicationService = require('./medicationService');
 const reportService = require('./reportService');
-const emailService = require('./emailService');
 
-// Service layer logging
-const wrapService = (service) => {
+// Service logging wrapper
+const wrapService = (service, name) => {
   return Object.keys(service).reduce((wrapped, key) => {
     wrapped[key] = async (...args) => {
-      console.log(`Calling ${key} in ${process.env.NODE_ENV}`);
+      console.log(`${name}.${key} called`);
       try {
         return await service[key](...args);
       } catch (error) {
-        console.error(`Error in ${key}:`, error);
+        console.error(`${name}.${key} error:`, error);
         throw error;
       }
     };
@@ -20,8 +19,7 @@ const wrapService = (service) => {
 };
 
 module.exports = {
-  authService: wrapService(authService),
-  medicationService: wrapService(medicationService),
-  reportService: wrapService(reportService),
-  emailService: wrapService(emailService)
+  auth: wrapService(authService, 'auth'),
+  medications: wrapService(medicationService, 'medications'),
+  reports: wrapService(reportService, 'reports')
 };
