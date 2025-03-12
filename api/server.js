@@ -32,23 +32,26 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('MongoDB connection error:', err);
 });
 
-// Mount routes with both patterns for serverless
-const { handlers } = authRoutes;  // Destructure handlers from imported module
+// Mount routes for both environments
+const { handlers: authHandlers } = authRoutes;
 
-// Auth routes with both paths
-app.post('/auth/login', handlers.login);
-app.post('/auth/register', handlers.register);
-app.post('/auth/logout', handlers.logout);
+// Auth routes
+app.post('/auth/login', authHandlers.login);
+app.post('/auth/register', authHandlers.register);
+app.post('/auth/logout', authHandlers.logout);
 
-app.post('/.netlify/functions/api/auth/login', handlers.login);
-app.post('/.netlify/functions/api/auth/register', handlers.register);
-app.post('/.netlify/functions/api/auth/logout', handlers.logout);
+// Full paths for serverless
+app.post('/.netlify/functions/api/auth/login', authHandlers.login);
+app.post('/.netlify/functions/api/auth/register', authHandlers.register);
+app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount other routes for non-serverless environment
-if (!process.env.NETLIFY) {
-  app.use('/medications', medicationRoutes);
-  app.use('/reports', reportRoutes);
-}
+// Mount medication routes for both environments
+app.use('/medications', medicationRoutes);
+app.use('/.netlify/functions/api/medications', medicationRoutes);
+
+// Mount report routes for both environments
+app.use('/reports', reportRoutes);
+app.use('/.netlify/functions/api/reports', reportRoutes);
 
 // Test route
 app.get('/test', (req, res) => {

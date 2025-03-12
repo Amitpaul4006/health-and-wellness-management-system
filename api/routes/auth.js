@@ -7,6 +7,7 @@ const User = require('../models/User');
 // Define handlers
 const handlers = {
   login: async (req, res) => {
+    console.log('Login attempt:', req.body.email, 'Environment:', process.env.NODE_ENV);
     try {
       console.log('Login attempt for:', req.body.email);
       const { email, password } = req.body;
@@ -30,6 +31,7 @@ const handlers = {
   },
 
   register: async (req, res) => {
+    console.log('Registration attempt:', req.body.email, 'Environment:', process.env.NODE_ENV);
     try {
       console.log('Registration attempt for:', req.body.email);
       

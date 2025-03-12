@@ -18,12 +18,15 @@ app.use((req, res, next) => {
   console.log('Serverless Request:', {
     method: req.method,
     path: req.path,
+    fullUrl: req.url,
     body: req.body
   });
   next();
 });
 
-const handler = serverless(app);
+const handler = serverless(app, {
+  basePath: '/.netlify/functions/api'
+});
 
 exports.handler = async (event, context) => {
   // Handle CORS preflight
