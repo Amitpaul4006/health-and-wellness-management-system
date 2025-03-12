@@ -55,9 +55,13 @@ app.use(['/medications', '/.netlify/functions/api/medications'], auth, (req, res
   next();
 }, medicationRoutes);
 
-// Mount report routes for both environments
-app.use('/reports', reportRoutes);
-app.use('/.netlify/functions/api/reports', reportRoutes);
+// Mount report routes with auth
+app.use(['/reports', '/.netlify/functions/api/reports'], auth, (req, res, next) => {
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  next();
+}, require('./routes/report'));
 
 // Test route
 app.get('/test', (req, res) => {

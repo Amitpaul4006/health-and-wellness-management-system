@@ -1,34 +1,40 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (emailData) => {
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_APP_PASSWORD
+  },
+  debug: true, // Enable debug logs
+  logger: true // Enable logger
+});
+
+const sendEmail = async (to, subject, html, attachments = null) => {
   try {
-    console.log('Sending email with config:', {
-      env: process.env.NODE_ENV,
-      hasUser: !!process.env.EMAIL_USER,
-      type: emailData.attachments ? 'report' : 'reminder'
-    });
+    console.log('Sending email:', { to, subject, hasAttachments: !!attachments });
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD
-      },
-      connectionTimeout: 5000,
-      socketTimeout: 5000
-    });
-
-    const result = await transporter.sendMail({
+    const mailOptions = {
       from: process.env.EMAIL_FROM,
-      ...emailData
-    });
+      to,
+      subject,
+      html
+    };
 
-    console.log('Email sent:', result.messageId);
-    return result;
+    if (attachments) {
+      mailOptions.attachments = [{
+        filename: 'report.csv',
+        content: attachments
+      }];
+    }
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return info;
   } catch (error) {
-    console.error('Email error:', error);
+    console.error('Email send error:', error);
     throw error;
   }
 };
 
-module.exports = { sendEmail };
+module.exports = { sendEmail, transporter };
