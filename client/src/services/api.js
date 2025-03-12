@@ -1,10 +1,6 @@
-import axios from 'axios';
-import configuredApi, { API_URL } from '../config/api';
+import api from '../config/api';  // Only import the default api instance
 
-// Use the configured api instance from config/api.js
-const api = configuredApi;
-
-// Service exports using the imported api instance
+// Service exports
 export const authService = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
@@ -25,6 +21,4 @@ export const reportService = {
   getMonthlyReport: () => api.get('/reports/monthly')
 };
 
-// Export API_URL and configured api instance
-export { API_URL };
 export default api;
