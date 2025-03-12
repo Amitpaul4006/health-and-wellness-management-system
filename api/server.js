@@ -2,10 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const { handlers } = require('./routes/auth');
+const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
-const { processJob } = require('./services/jobScheduler');
 
 const app = express();
 
@@ -33,7 +32,10 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('MongoDB connection error:', err);
 });
 
-// Mount routes with both patterns for local and serverless
+// Mount routes with both patterns for serverless
+const { handlers } = authRoutes;  // Destructure handlers from imported module
+
+// Auth routes with both paths
 app.post('/auth/login', handlers.login);
 app.post('/auth/register', handlers.register);
 app.post('/auth/logout', handlers.logout);
@@ -42,11 +44,10 @@ app.post('/.netlify/functions/api/auth/login', handlers.login);
 app.post('/.netlify/functions/api/auth/register', handlers.register);
 app.post('/.netlify/functions/api/auth/logout', handlers.logout);
 
-// Mount routes for non-serverless environment
+// Mount other routes for non-serverless environment
 if (!process.env.NETLIFY) {
-  app.use('/auth', auth.router);
-  app.use('/medications', require('./routes/medications'));
-  app.use('/reports', require('./routes/report'));
+  app.use('/medications', medicationRoutes);
+  app.use('/reports', reportRoutes);
 }
 
 // Test route
