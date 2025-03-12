@@ -6,6 +6,15 @@ console.log('API Environment:', {
   isServerless: !!process.env.NETLIFY
 });
 
+// Add logging for debugging
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, {
+    isServerless: !!process.env.NETLIFY,
+    timestamp: new Date().toISOString()
+  });
+  next();
+});
+
 // Wrap app with serverless handler
 const handler = serverless(app);
 
