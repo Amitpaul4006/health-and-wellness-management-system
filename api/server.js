@@ -46,13 +46,12 @@ app.post('/.netlify/functions/api/auth/login', authHandlers.login);
 app.post('/.netlify/functions/api/auth/register', authHandlers.register);
 app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount medication routes with auth middleware
+// Mount routes with auth middleware first
 app.use(['/medications', '/.netlify/functions/api/medications'], auth, (req, res, next) => {
-  console.log('Protected route accessed:', {
-    path: req.path,
-    userId: req.user?.id,
-    method: req.method
-  });
+  if (!req.user?.id) {
+    console.error('No user ID in request');
+    return res.status(401).json({ message: 'Authentication required' });
+  }
   next();
 }, medicationRoutes);
 
