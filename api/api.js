@@ -1,21 +1,15 @@
 const serverless = require('serverless-http');
 const app = require('./server');
-const authRoutes = require('./routes/auth');
+const { handlers } = require('./routes/auth');
 
-// Log environment
-console.log('API Environment:', {
-  NODE_ENV: process.env.NODE_ENV,
-  isServerless: true
-});
+// Mount routes with full paths for serverless
+app.post('/.netlify/functions/api/auth/login', handlers.login);
+app.post('/.netlify/functions/api/auth/register', handlers.register);
+app.post('/.netlify/functions/api/auth/logout', handlers.logout);
 
-// Mount auth routes directly
-app.post('/auth/login', authRoutes.handlers.login);
-app.post('/auth/register', authRoutes.handlers.register);
-app.post('/auth/logout', authRoutes.handlers.logout);
-
-// Request logging
+// Log requests
 app.use((req, res, next) => {
-  console.log('Request:', {
+  console.log('Serverless Request:', {
     method: req.method,
     path: req.path,
     body: req.body

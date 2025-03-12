@@ -1,16 +1,17 @@
 import axios from 'axios';
 
-// Fix base URL formatting
-const BASE_URL = process.env.NODE_ENV === 'production'
-  ? 'https://managementhealthandwellness.netlify.app'
-  : 'http://localhost:5000';
+// Ensure we're using the full path for production
+const API_URL = process.env.NODE_ENV === 'production'
+  ? 'https://managementhealthandwellness.netlify.app/.netlify/functions/api'
+  : 'http://localhost:5000/api';
 
-const API_PATH = process.env.NODE_ENV === 'production'
-  ? '/.netlify/functions/api'
-  : '/api';
+console.log('API Configuration:', {
+  environment: process.env.NODE_ENV,
+  baseURL: API_URL
+});
 
 const api = axios.create({
-  baseURL: `${BASE_URL}${API_PATH}`,
+  baseURL: API_URL,
   timeout: process.env.NODE_ENV === 'production' ? 10000 : 30000,
   headers: { 'Content-Type': 'application/json' }
 });
@@ -33,5 +34,4 @@ api.interceptors.response.use(
   }
 );
 
-export const API_URL = `${BASE_URL}${API_PATH}`;
 export default api;

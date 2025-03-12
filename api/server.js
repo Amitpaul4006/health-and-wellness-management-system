@@ -2,7 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const auth = require('./routes/auth');
+const { handlers } = require('./routes/auth');
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const { processJob } = require('./services/jobScheduler');
@@ -32,6 +32,15 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).catch(err => {
   console.error('MongoDB connection error:', err);
 });
+
+// Mount routes with both patterns for local and serverless
+app.post('/auth/login', handlers.login);
+app.post('/auth/register', handlers.register);
+app.post('/auth/logout', handlers.logout);
+
+app.post('/.netlify/functions/api/auth/login', handlers.login);
+app.post('/.netlify/functions/api/auth/register', handlers.register);
+app.post('/.netlify/functions/api/auth/logout', handlers.logout);
 
 // Mount routes for non-serverless environment
 if (!process.env.NETLIFY) {
