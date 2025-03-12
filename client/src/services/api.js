@@ -8,8 +8,17 @@ export const authService = {
 };
 
 export const medicationService = {
-  getAll: () => api.get('/medications'),
-  add: (data) => api.post('/medications/add', data),
+  getAll: () => {
+    console.log('Fetching medications with token:', localStorage.getItem('token'));
+    return api.get('/medications');
+  },
+  add: (data) => {
+    console.log('Adding medication:', data);
+    return api.post('/medications/add', {
+      ...data,
+      scheduledDate: `${data.date}T${data.time}`
+    });
+  },
   updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status }),
   getReminders: () => api.get('/medications/reminders'),
   markDone: (id) => api.patch(`/medications/${id}/done`)
