@@ -7,22 +7,23 @@ const User = require('../models/User');
 // Define handlers
 const handlers = {
   login: async (req, res) => {
-    console.log('Login attempt:', req.body.email, 'Environment:', process.env.NODE_ENV);
     try {
-      console.log('Login attempt for:', req.body.email);
       const { email, password } = req.body;
+      console.log('Login attempt for:', email);
+
       const user = await User.findOne({ email });
-      
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ message: 'Invalid credentials' });
       }
 
+      // Important: Set userId in token payload
       const token = jwt.sign(
-        { userId: user._id },
+        { userId: user._id.toString() },  // Convert ObjectId to string
         process.env.JWT_SECRET,
         { expiresIn: '24h' }
       );
 
+      console.log('Login successful:', { userId: user._id, email: user.email });
       res.json({ token, userId: user._id });
     } catch (error) {
       console.error('Login error:', error);
