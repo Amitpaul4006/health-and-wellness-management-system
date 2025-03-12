@@ -59,8 +59,46 @@ const validateMedication = [
 ];
 
 // Routes
-router.get('/', auth, medicationController.getMedications);
-router.post('/add', auth, validateMedication, medicationController.addMedication);
+router.get('/', auth, async (req, res) => {
+  try {
+    const medications = await Medication.find({ userId: req.user.id });
+    res.json(medications);
+  } catch (error) {
+    console.error('Get medications error:', error);
+    res.status(500).json({ message: 'Failed to fetch medications' });
+  }
+});
+
+router.post('/add', auth, validateMedication, async (req, res) => {
+  try {
+    console.log('Creating medication:', {
+      userId: req.user.id,
+      body: req.body
+    });
+
+    const medicationData = {
+      userId: req.user.id,
+      name: req.body.name,
+      description: req.body.description,
+      type: req.body.type,
+      scheduledDate: new Date(`${req.body.date}T${req.body.time}`),
+      status: 'pending'
+    };
+
+    const medication = new Medication(medicationData);
+    const saved = await medication.save();
+    
+    console.log('Medication saved:', saved);
+    res.status(201).json(saved);
+  } catch (error) {
+    console.error('Add medication error:', error);
+    res.status(500).json({ 
+      message: 'Error creating medication',
+      error: error.message
+    });
+  }
+});
+
 router.get('/:id/status', auth, medicationController.getMedicationStatus);
 router.patch('/:id/status', auth, medicationController.updateMedicationStatus);
 
