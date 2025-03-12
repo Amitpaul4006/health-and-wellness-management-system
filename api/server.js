@@ -46,9 +46,15 @@ app.post('/.netlify/functions/api/auth/login', authHandlers.login);
 app.post('/.netlify/functions/api/auth/register', authHandlers.register);
 app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount medication routes with auth
-app.use('/medications', auth, medicationRoutes);
-app.use('/.netlify/functions/api/medications', auth, medicationRoutes);
+// Mount medication routes with auth middleware
+app.use(['/medications', '/.netlify/functions/api/medications'], auth, (req, res, next) => {
+  console.log('Protected route accessed:', {
+    path: req.path,
+    userId: req.user?.id,
+    method: req.method
+  });
+  next();
+}, medicationRoutes);
 
 // Mount report routes for both environments
 app.use('/reports', reportRoutes);
