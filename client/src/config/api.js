@@ -1,9 +1,14 @@
 import axios from 'axios';
 
-// Export API URL for use in other files
-export const API_URL = process.env.NODE_ENV === 'production'
+// Define base URL
+const API_URL = process.env.NODE_ENV === 'production'
   ? 'https://managementhealthandwellness.netlify.app/.netlify/functions/api'
   : 'http://localhost:5000/api';
+
+console.log('API Configuration:', {
+  environment: process.env.NODE_ENV,
+  baseURL: API_URL
+});
 
 const api = axios.create({
   baseURL: API_URL,
@@ -29,5 +34,6 @@ api.interceptors.response.use(
   }
 );
 
-// Export both API instance and URL
-export { api as default, API_URL };
+// Clean single export approach
+export { API_URL };
+export default api;
