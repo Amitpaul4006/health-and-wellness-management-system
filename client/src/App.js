@@ -12,6 +12,8 @@ console.log('API Configuration:', {
   environment: process.env.NODE_ENV
 });
 
+console.log('Using API URL:', API_URL);
+
 function App() {
   return (
     <BrowserRouter>

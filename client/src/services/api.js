@@ -1,38 +1,14 @@
 import axios from 'axios';
-import API_URL from '../config/api';
+import configuredApi, { API_URL } from '../config/api';
 
-const api = axios.create({
-  baseURL: API_URL
-});
+// Use the configured api instance from config/api.js
+const api = configuredApi;
 
-// Add request interceptor to add token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-// Add response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
-
-// All operations use this configured api instance:
+// Service exports using the imported api instance
 export const authService = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
-  logout: () => api.post('/auth/logout'),
-  verifyEmail: (token) => api.post('/auth/verify-email', { token }),
-  resetPassword: (data) => api.post('/auth/reset-password', data)
+  logout: () => api.post('/auth/logout')
 };
 
 export const medicationService = {
@@ -40,8 +16,7 @@ export const medicationService = {
   add: (data) => api.post('/medications/add', data),
   updateStatus: (id, status) => api.patch(`/medications/${id}/status`, { status }),
   getReminders: () => api.get('/medications/reminders'),
-  markDone: (id) => api.patch(`/medications/${id}/done`),
-  updateReminder: (id, data) => api.put(`/medications/${id}/reminder`, data)
+  markDone: (id) => api.patch(`/medications/${id}/done`)
 };
 
 export const reportService = {
@@ -50,4 +25,6 @@ export const reportService = {
   getMonthlyReport: () => api.get('/reports/monthly')
 };
 
+// Export API_URL and configured api instance
+export { API_URL };
 export default api;
