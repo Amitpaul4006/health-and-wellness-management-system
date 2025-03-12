@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
+const auth = require('./middleware/auth');
 
 const app = express();
 
@@ -45,9 +46,9 @@ app.post('/.netlify/functions/api/auth/login', authHandlers.login);
 app.post('/.netlify/functions/api/auth/register', authHandlers.register);
 app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount medication routes for both environments
-app.use('/medications', medicationRoutes);
-app.use('/.netlify/functions/api/medications', medicationRoutes);
+// Mount medication routes with auth
+app.use('/medications', auth, medicationRoutes);
+app.use('/.netlify/functions/api/medications', auth, medicationRoutes);
 
 // Mount report routes for both environments
 app.use('/reports', reportRoutes);
