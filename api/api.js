@@ -1,21 +1,28 @@
 const serverless = require('serverless-http');
 const app = require('./server');
+const authRoutes = require('./routes/auth');
 
+// Log environment
 console.log('API Environment:', {
   NODE_ENV: process.env.NODE_ENV,
-  isServerless: !!process.env.NETLIFY
+  isServerless: true
 });
 
-// Add logging for debugging
+// Mount auth routes directly
+app.post('/auth/login', authRoutes.handlers.login);
+app.post('/auth/register', authRoutes.handlers.register);
+app.post('/auth/logout', authRoutes.handlers.logout);
+
+// Request logging
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, {
-    isServerless: !!process.env.NETLIFY,
-    timestamp: new Date().toISOString()
+  console.log('Request:', {
+    method: req.method,
+    path: req.path,
+    body: req.body
   });
   next();
 });
 
-// Wrap app with serverless handler
 const handler = serverless(app);
 
 exports.handler = async (event, context) => {

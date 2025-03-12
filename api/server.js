@@ -33,10 +33,12 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('MongoDB connection error:', err);
 });
 
-// Mount routes at root level
-app.use('/auth', auth.router);
-app.use('/medications', require('./routes/medications'));
-app.use('/reports', require('./routes/report'));
+// Mount routes for non-serverless environment
+if (!process.env.NETLIFY) {
+  app.use('/auth', auth.router);
+  app.use('/medications', require('./routes/medications'));
+  app.use('/reports', require('./routes/report'));
+}
 
 // Test route
 app.get('/test', (req, res) => {
