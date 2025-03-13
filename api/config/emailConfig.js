@@ -1,9 +1,9 @@
 const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
-  console.log('Creating email transporter with:', {
+  console.log('Creating email transporter:', {
     user: process.env.EMAIL_USER,
-    hasPass: !!process.env.EMAIL_APP_PASSWORD
+    environment: process.env.NODE_ENV
   });
 
   return nodemailer.createTransport({
@@ -28,22 +28,21 @@ const sendEmail = async (to, subject, html, attachments = null) => {
       to,
       subject,
       html,
-      attachments: attachments ? [
-        {
-          filename: 'medication-report.csv',
+      ...(attachments && {
+        attachments: [{
+          filename: 'report.csv',
           content: attachments,
           contentType: 'text/csv'
-        }
-      ] : undefined
+        }]
+      })
     };
 
     const info = await transporter.sendMail(mailOptions);
     console.log('Email sent successfully:', info.messageId);
-    return info;
-
+    return true;
   } catch (error) {
     console.error('Email send error:', error);
-    throw new Error('Failed to send email: ' + error.message);
+    throw error;
   }
 };
 

@@ -154,29 +154,30 @@ class MedicationService {
 
   async handleMedicationReminder(medication, user) {
     try {
-      const emailContent = `
-        <h2>Medication Reminder</h2>
-        <p>Hello ${user.username || user.email},</p>
-        <p>Time to take your medication: <strong>${medication.name}</strong></p>
-        <p>Details:</p>
-        <ul>
-          <li>Time: ${new Date(medication.scheduledDate).toLocaleTimeString()}</li>
-          <li>Description: ${medication.description || 'No description'}</li>
-          <li>Type: ${medication.type}</li>
-        </ul>
-        <p><a href="${process.env.CLIENT_URL}/medications/${medication._id}/mark-done">Mark as Done</a></p>
-      `;
+      console.log('Processing reminder:', {
+        medicationId: medication._id,
+        userId: user._id,
+        scheduledTime: medication.scheduledDate
+      });
 
-      await sendEmail(
-        user.email,
-        'Medication Reminder',
-        emailContent
-      );
+      // Send reminder email
+      await this.sendReminderEmail(medication, user);
 
+      // Update medication status
+      await Medication.findByIdAndUpdate(medication._id, {
+        lastNotified: new Date(),
+        notificationSent: true
+      });
+
+      // Schedule next reminder if recurring
       if (medication.type === 'recurring') {
         const nextDate = new Date(medication.scheduledDate);
         nextDate.setDate(nextDate.getDate() + 1);
-        await this.scheduleReminder({ ...medication, scheduledDate: nextDate }, user);
+        await this.scheduleReminder({
+          ...medication,
+          scheduledDate: nextDate,
+          notificationSent: false
+        }, user);
       }
 
       return true;
@@ -184,6 +185,16 @@ class MedicationService {
       console.error('Reminder handling error:', error);
       throw error;
     }
+  }
+
+  getActiveReminders(userId) {
+    return Array.from(activeReminders.entries())
+      .filter(([id]) => id.startsWith(userId))
+      .map(([id, timer]) => ({
+        id,
+        scheduled: true,
+        timer: !!timer
+      }));
   }
 }
 

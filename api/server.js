@@ -7,8 +7,8 @@ const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const auth = require('./middleware/auth');
 const User = require('./models/User');
-const { scheduleReminder } = require('./services/jobScheduler');
-const { scheduleNotification } = require('./services/notificationService');
+const Medication = require('./models/Medication');
+const medicationService = require('./services/medicationService');
 
 // Verify configuration on startup
 const verifyConfig = () => {
@@ -110,7 +110,7 @@ mongoose.connection.once('connected', async () => {
     for (const medication of medications) {
       const user = await User.findById(medication.userId);
       if (user) {
-        await scheduleReminder(medication, user);
+        await medicationService.scheduleReminder(medication, user);
       }
     }
   } catch (error) {
@@ -131,7 +131,7 @@ mongoose.connection.once('connected', async () => {
     for (const medication of pendingMedications) {
       const user = await User.findById(medication.userId);
       if (user) {
-        await scheduleNotification(medication, user);
+        await medicationService.scheduleReminder(medication, user);
         console.log('Scheduled reminder for:', medication.name);
       }
     }

@@ -4,8 +4,6 @@ const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const Medication = require('../models/Medication');
 const User = require('../models/User');
-const { scheduleReminder } = require('../services/jobScheduler');
-const { scheduleNotification } = require('../services/notificationService');
 const medicationService = require('../services/medicationService');
 
 // Validation middleware
@@ -87,7 +85,7 @@ router.post('/add', auth, validateMedication, async (req, res) => {
     const medication = new Medication(medicationData);
     const saved = await medication.save();
 
-    // Schedule reminder using service
+    // Use medicationService instead of separate notification services
     const user = await User.findById(req.user.id);
     await medicationService.scheduleReminder(saved, user);
 
