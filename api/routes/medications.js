@@ -4,6 +4,8 @@ const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const medicationController = require('../controllers/medicationController');
 const Medication = require('../models/Medication'); // Add this import
+const User = require('../models/User');
+const { scheduleReminder } = require('../services/jobScheduler');
 
 // Validation middleware
 const validateMedication = [
@@ -69,6 +71,7 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+// Add medication with reminder
 router.post('/add', auth, validateMedication, async (req, res) => {
   try {
     console.log('Creating medication:', {
@@ -88,7 +91,11 @@ router.post('/add', auth, validateMedication, async (req, res) => {
     const medication = new Medication(medicationData);
     const saved = await medication.save();
     
-    console.log('Medication saved:', saved);
+    // Schedule reminder
+    const user = await User.findById(req.user.id);
+    await scheduleReminder(saved, user);
+
+    console.log('Medication saved with reminder:', saved);
     res.status(201).json(saved);
   } catch (error) {
     console.error('Add medication error:', error);
@@ -99,7 +106,32 @@ router.post('/add', auth, validateMedication, async (req, res) => {
   }
 });
 
+// Update medication status
+router.patch('/:id/status', auth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    console.log('Updating medication status:', { id, status });
+
+    const medication = await Medication.findOneAndUpdate(
+      { _id: id, userId: req.user.id },
+      { $set: { status } },
+      { new: true }
+    );
+
+    if (!medication) {
+      return res.status(404).json({ error: 'Medication not found' });
+    }
+
+    console.log('Status updated:', medication);
+    res.json(medication);
+  } catch (error) {
+    console.error('Update status error:', error);
+    res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
 router.get('/:id/status', auth, medicationController.getMedicationStatus);
-router.patch('/:id/status', auth, medicationController.updateMedicationStatus);
 
 module.exports = router;

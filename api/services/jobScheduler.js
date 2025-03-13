@@ -119,9 +119,44 @@ const cleanup = async () => {
 // Alias for cleanup to maintain compatibility
 const jobCleanup = cleanup;
 
+const scheduleReminder = async (medication, user) => {
+  try {
+    const scheduledTime = new Date(medication.scheduledDate);
+    const now = new Date();
+    
+    console.log('Scheduling reminder:', {
+      medicationId: medication._id,
+      userId: user._id,
+      scheduledTime
+    });
+
+    // Schedule the reminder
+    setTimeout(async () => {
+      try {
+        await sendEmail(
+          user.email,
+          'Medication Reminder',
+          `<h2>Medication Reminder</h2>
+           <p>This is a reminder to take your medication: ${medication.name}</p>
+           <p>Time: ${scheduledTime.toLocaleTimeString()}</p>
+           <p>Description: ${medication.description || 'No description'}</p>
+           <a href="${process.env.CLIENT_URL}/medications/${medication._id}/mark-done">Mark as Done</a>`,
+        );
+        console.log('Reminder sent for medication:', medication._id);
+      } catch (error) {
+        console.error('Failed to send reminder:', error);
+      }
+    }, scheduledTime.getTime() - now.getTime());
+
+  } catch (error) {
+    console.error('Error scheduling reminder:', error);
+  }
+};
+
 module.exports = {
   createJob,
   processJob,
   cleanup,
-  jobCleanup
+  jobCleanup,
+  scheduleReminder
 };

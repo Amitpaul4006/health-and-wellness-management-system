@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const auth = require('./middleware/auth');
+const User = require('./models/User');
+const { scheduleReminder } = require('./services/jobScheduler');
 
 const app = express();
 
@@ -66,6 +68,27 @@ app.use(['/reports', '/.netlify/functions/api/reports'], auth, (req, res, next) 
 // Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
+});
+
+// Schedule existing reminders on server start
+mongoose.connection.once('connected', async () => {
+  try {
+    const medications = await Medication.find({
+      status: 'pending',
+      scheduledDate: { $gt: new Date() }
+    });
+
+    console.log('Scheduling reminders for existing medications:', medications.length);
+
+    for (const medication of medications) {
+      const user = await User.findById(medication.userId);
+      if (user) {
+        await scheduleReminder(medication, user);
+      }
+    }
+  } catch (error) {
+    console.error('Error scheduling existing reminders:', error);
+  }
 });
 
 // More detailed error handling
