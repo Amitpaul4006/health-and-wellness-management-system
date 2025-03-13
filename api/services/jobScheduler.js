@@ -123,35 +123,31 @@ const scheduleReminder = async (medication, user) => {
   try {
     const scheduledTime = new Date(medication.scheduledDate);
     const now = new Date();
-    const delay = scheduledTime.getTime() - now.getTime();
+    const delay = Math.max(0, scheduledTime.getTime() - now.getTime());
 
     console.log('Scheduling reminder:', {
       medicationId: medication._id,
-      userId: user._id,
       scheduledTime: scheduledTime.toISOString(),
-      delay: `${Math.floor(delay / 1000 / 60)} minutes`
+      delay: `${Math.floor(delay / 1000 / 60)} minutes`,
+      userEmail: user.email
     });
 
-    if (delay < 0) {
-      console.log('Skipping past reminder:', medication._id);
+    // Skip if medication is in the past
+    if (delay === 0) {
+      console.log('Skipping past reminder');
       return;
     }
 
-    // Schedule reminder
+    // Schedule reminder using setTimeout
     setTimeout(async () => {
       try {
-        console.log('Sending reminder for:', medication._id);
-        
         const emailContent = `
           <h2>Medication Reminder</h2>
           <p>Time to take your medication: ${medication.name}</p>
-          <p>Details:</p>
-          <ul>
-            <li>Time: ${scheduledTime.toLocaleTimeString()}</li>
-            <li>Description: ${medication.description || 'No description'}</li>
-            <li>Type: ${medication.type}</li>
-          </ul>
-          <p><a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/medications/${medication._id}/mark-done">Mark as Done</a></p>
+          <p>Time: ${scheduledTime.toLocaleTimeString()}</p>
+          <p>Type: ${medication.type}</p>
+          <p>${medication.description || ''}</p>
+          <p><a href="${process.env.CLIENT_URL}/medications/${medication._id}/mark-done">Mark as Done</a></p>
         `;
 
         await sendEmail(
@@ -160,23 +156,7 @@ const scheduleReminder = async (medication, user) => {
           emailContent
         );
 
-        console.log('Reminder sent successfully for:', medication._id);
-
-        // For recurring medications, schedule next reminder
-        if (medication.type === 'recurring') {
-          const nextDate = new Date(scheduledTime);
-          nextDate.setDate(nextDate.getDate() + 1); // Daily recurrence
-          
-          console.log('Scheduling next recurring reminder:', {
-            medicationId: medication._id,
-            nextDate: nextDate.toISOString()
-          });
-
-          await scheduleReminder({
-            ...medication,
-            scheduledDate: nextDate
-          }, user);
-        }
+        console.log('Reminder sent for:', medication._id);
       } catch (error) {
         console.error('Failed to send reminder:', error);
       }

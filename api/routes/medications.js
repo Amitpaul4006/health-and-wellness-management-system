@@ -2,8 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
-const medicationController = require('../controllers/medicationController');
-const Medication = require('../models/Medication'); // Add this import
+const Medication = require('../models/Medication');
 const User = require('../models/User');
 const { scheduleReminder } = require('../services/jobScheduler');
 
@@ -74,17 +73,6 @@ router.get('/', auth, async (req, res) => {
 // Add medication with reminder
 router.post('/add', auth, validateMedication, async (req, res) => {
   try {
-    // Log timezone info
-    console.log('Adding medication with timezone info:', {
-      serverTime: new Date(),
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      requestData: {
-        date: req.body.date,
-        time: req.body.time,
-        type: req.body.type
-      }
-    });
-
     const medicationData = {
       userId: req.user.id,
       name: req.body.name,
@@ -94,17 +82,12 @@ router.post('/add', auth, validateMedication, async (req, res) => {
       status: 'pending'
     };
 
+    console.log('Creating medication:', medicationData);
     const medication = new Medication(medicationData);
     const saved = await medication.save();
 
-    // Schedule reminder with logging
+    // Schedule reminder
     const user = await User.findById(req.user.id);
-    console.log('Scheduling reminder for new medication:', {
-      medicationId: saved._id,
-      scheduledDate: saved.scheduledDate,
-      userEmail: user.email
-    });
-
     await scheduleReminder(saved, user);
 
     res.status(201).json(saved);
@@ -120,8 +103,6 @@ router.patch('/:id/status', auth, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    console.log('Updating medication status:', { id, status });
-
     const medication = await Medication.findOneAndUpdate(
       { _id: id, userId: req.user.id },
       { $set: { status } },
@@ -132,18 +113,16 @@ router.patch('/:id/status', auth, async (req, res) => {
       return res.status(404).json({ error: 'Medication not found' });
     }
 
-    console.log('Status updated:', medication);
     res.json(medication);
   } catch (error) {
-    const medications = await Medication.find({
     console.error('Update status error:', error);
     res.status(500).json({ error: 'Failed to update status' });
   }
 });
 
-router.get('/:id/status', auth, medicationController.getMedicationStatus);
-
-module.exports = router;
+router.get('/debug/reminders', auth, async (req, res) => {
+  try {
+    const medications = await Medication.find({
       userId: req.user.id,
       status: 'pending',
       scheduledDate: { $gt: new Date() }
