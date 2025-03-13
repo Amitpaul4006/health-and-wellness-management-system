@@ -56,7 +56,7 @@ const medicationController = {
     try {
       const medication = await Medication.findOne({
         _id: req.params.id,
-        userId: req.userId
+        userId: req.user.id
       });
       
       if (!medication) {

@@ -8,6 +8,33 @@ const reportRoutes = require('./routes/report');
 const auth = require('./middleware/auth');
 const User = require('./models/User');
 const { scheduleReminder } = require('./services/jobScheduler');
+const { scheduleNotification } = require('./services/notificationService');
+
+// Verify configuration on startup
+const verifyConfig = () => {
+  const requiredEnvVars = [
+    'MONGODB_URI',
+    'JWT_SECRET',
+    'EMAIL_USER',
+    'EMAIL_APP_PASSWORD',
+    'EMAIL_FROM'
+  ];
+
+  const missing = requiredEnvVars.filter(env => !process.env[env]);
+  if (missing.length > 0) {
+    console.error('Missing required environment variables:', missing);
+    process.exit(1);
+  }
+
+  console.log('Configuration verified:', {
+    environment: process.env.NODE_ENV,
+    hasEmail: !!process.env.EMAIL_USER,
+    hasDB: !!process.env.MONGODB_URI
+  });
+};
+
+// Call verification before starting
+verifyConfig();
 
 const app = express();
 
@@ -88,6 +115,28 @@ mongoose.connection.once('connected', async () => {
     }
   } catch (error) {
     console.error('Error scheduling existing reminders:', error);
+  }
+});
+
+// Schedule pending reminders on server start
+mongoose.connection.once('connected', async () => {
+  try {
+    const pendingMedications = await Medication.find({
+      status: 'pending',
+      scheduledDate: { $gt: new Date() }
+    });
+
+    console.log('Found pending medications:', pendingMedications.length);
+
+    for (const medication of pendingMedications) {
+      const user = await User.findById(medication.userId);
+      if (user) {
+        await scheduleNotification(medication, user);
+        console.log('Scheduled reminder for:', medication.name);
+      }
+    }
+  } catch (error) {
+    console.error('Error scheduling pending reminders:', error);
   }
 });
 

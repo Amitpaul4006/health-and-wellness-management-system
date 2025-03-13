@@ -5,6 +5,8 @@ const auth = require('../middleware/auth');
 const Medication = require('../models/Medication');
 const User = require('../models/User');
 const { scheduleReminder } = require('../services/jobScheduler');
+const { scheduleNotification } = require('../services/notificationService');
+const medicationService = require('../services/medicationService');
 
 // Validation middleware
 const validateMedication = [
@@ -82,13 +84,12 @@ router.post('/add', auth, validateMedication, async (req, res) => {
       status: 'pending'
     };
 
-    console.log('Creating medication:', medicationData);
     const medication = new Medication(medicationData);
     const saved = await medication.save();
 
-    // Schedule reminder
+    // Schedule reminder using service
     const user = await User.findById(req.user.id);
-    await scheduleReminder(saved, user);
+    await medicationService.scheduleReminder(saved, user);
 
     res.status(201).json(saved);
   } catch (error) {
@@ -149,6 +150,40 @@ router.get('/debug/reminders', auth, async (req, res) => {
   }
 });
 
-router.get('/:id/status', auth, medicationController.getMedicationStatus);
+// Add debug endpoint for notifications
+router.get('/debug/notifications', auth, async (req, res) => {
+  try {
+    const activeReminders = await medicationService.getActiveReminders(req.user.id);
+    res.json({
+      reminders: activeReminders,
+      serverTime: new Date(),
+      timezone: process.env.TZ || Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get medication status
+router.get('/:id/status', auth, async (req, res) => {
+  try {
+    const medication = await Medication.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
+
+    if (!medication) {
+      return res.status(404).json({ error: 'Medication not found' });
+    }
+
+    res.json({ status: medication.status });
+  } catch (error) {
+    console.error('Get status error:', error);
+    res.status(500).json({ error: 'Failed to get status' });
+  }
+});
+
+// Remove the incorrect reference to medicationController
+// router.get('/:id/status', auth, medicationController.getMedicationStatus);
 
 module.exports = router;

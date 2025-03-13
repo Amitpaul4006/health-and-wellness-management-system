@@ -1,93 +1,189 @@
-const { Queue } = require('bullmq');
 const Medication = require('../models/Medication');
-const emailService = require('./emailService');
+const { sendEmail } = require('../config/emailConfig');
+
+// Store active reminders
+const activeReminders = new Map();
 
 class MedicationService {
-  constructor() {
-    this.medicationQueue = new Queue('medication', {
-      connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379
-      }
-    });
-  }
-
-  async scheduleOneTimeMedication(medicationData) {
+  async scheduleReminder(medication, user) {
     try {
-      // Create the medication document
-      const medication = new Medication({
-        name: medicationData.name,
-        type: 'one-time',
-        description: medicationData.description,
-        scheduledDate: medicationData.scheduledDate,
-        userId: medicationData.userId,
-        status: 'pending'
-      });
-
-      // Save first to get the ID
-      await medication.save();
-
-      // Calculate delay
-      const now = new Date();
       const scheduledTime = new Date(medication.scheduledDate);
-      const delay = Math.max(0, scheduledTime - now);
+      const now = new Date();
+      const delay = Math.max(0, scheduledTime.getTime() - now.getTime());
 
-      // Add to queue
-      const job = await this.medicationQueue.add('medication-reminder', {
+      console.log('Scheduling reminder:', {
         medicationId: medication._id,
-        email: medicationData.userEmail,
-        medication: medication.name,
-        time: scheduledTime.toISOString()
-      }, {
-        delay,
-        attempts: 3,
-        removeOnComplete: false
+        scheduledTime: scheduledTime.toISOString(),
+        delayMinutes: Math.floor(delay / 60000)
       });
 
-      // Update with job ID
-      medication.jobId = job.id;
-      await medication.save();
+      if (delay <= 0) {
+        console.log('Skipping past reminder');
+        return;
+      }
 
-      return medication;
+      // Clear existing reminder if any
+      this.cancelReminder(medication._id);
+
+      // Schedule new reminder
+      const timerId = setTimeout(async () => {
+        try {
+          await this.handleMedicationReminder(medication, user);
+          
+          // Schedule next reminder if recurring
+          if (medication.type === 'recurring') {
+            const nextDate = new Date(scheduledTime);
+            nextDate.setDate(nextDate.getDate() + 1);
+            
+            const nextMedication = {
+              ...medication,
+              scheduledDate: nextDate
+            };
+            
+            await this.scheduleReminder(nextMedication, user);
+          }
+        } catch (error) {
+          console.error('Reminder processing error:', error);
+        }
+      }, delay);
+
+      activeReminders.set(medication._id.toString(), timerId);
+      
+      // Update medication with scheduling info
+      await Medication.findByIdAndUpdate(medication._id, {
+        lastScheduled: now,
+        nextReminder: scheduledTime
+      });
+
     } catch (error) {
-      console.error('Error in scheduleOneTimeMedication:', error);
+      console.error('Reminder scheduling error:', error);
       throw error;
     }
   }
 
-  async processImmediateMedication(medication) {
-    try {
-      await emailService.sendEmail({
-        to: medication.userEmail,
-        subject: 'Medication Reminder',
-        text: `Time to take your medication: ${medication.name} now!`
-      });
-      await this.updateMedicationStatus(medication._id, 'completed');
-    } catch (error) {
-      console.error('Error processing immediate medication:', error);
+  cancelReminder(medicationId) {
+    const timerId = activeReminders.get(medicationId.toString());
+    if (timerId) {
+      clearTimeout(timerId);
+      activeReminders.delete(medicationId.toString());
+      console.log('Cancelled reminder:', medicationId);
     }
   }
 
-  async updateMedicationStatus(medicationId, status) {
-    return await Medication.findByIdAndUpdate(
-      medicationId,
-      { 
-        status,
-        notificationSent: true
-      },
+  async sendReminderEmail(medication, user) {
+    const emailContent = `
+      <h2>Medication Reminder</h2>
+      <p>Hello ${user.username || user.email},</p>
+      <p>Time to take your medication: <strong>${medication.name}</strong></p>
+      <p>Details:</p>
+      <ul>
+        <li>Time: ${new Date(medication.scheduledDate).toLocaleTimeString()}</li>
+        <li>Description: ${medication.description || 'No description'}</li>
+        <li>Type: ${medication.type}</li>
+      </ul>
+      <p><a href="${process.env.CLIENT_URL}/medications/${medication._id}/mark-done">Mark as Done</a></p>
+    `;
+
+    await sendEmail(
+      user.email,
+      'Medication Reminder',
+      emailContent
+    );
+
+    console.log('Reminder email sent:', {
+      medicationId: medication._id,
+      userEmail: user.email
+    });
+
+    // Update medication status
+    await Medication.findByIdAndUpdate(medication._id, {
+      lastNotified: new Date(),
+      notificationSent: true
+    });
+  }
+
+  async updateMedicationStatus(medicationId, status, userId) {
+    const medication = await Medication.findOneAndUpdate(
+      { _id: medicationId, userId },
+      { status },
       { new: true }
     );
+
+    if (medication && status === 'done') {
+      this.cancelReminder(medicationId);
+    }
+
+    return medication;
   }
 
-  async getMedicationStatus(medicationId) {
-    const medication = await Medication.findById(medicationId);
-    const now = new Date();
-    
-    if (medication.scheduledDate < now && !medication.notificationSent) {
-      await this.updateMedicationStatus(medicationId, 'missed');
+  async getMedicationStatus(medicationId, userId) {
+    return await Medication.findOne({ _id: medicationId, userId });
+  }
+
+  async generateAndSendReport(userId, user) {
+    try {
+      console.log('Generating report for user:', userId);
+
+      const medications = await Medication.find({ userId });
+      const csvHeader = 'Name,Description,Type,Scheduled Date,Status\n';
+      const csvRows = medications.map(med => 
+        `${med.name},${med.description || ''},${med.type},${med.scheduledDate.toISOString()},${med.status}`
+      ).join('\n');
+
+      const emailContent = `
+        <h2>Medication Report</h2>
+        <p>Hello ${user.username || user.email},</p>
+        <p>Please find your medication report attached.</p>
+        <p>Generated on: ${new Date().toLocaleString()}</p>
+      `;
+
+      await sendEmail(
+        user.email,
+        'Your Medication Report',
+        emailContent,
+        csvHeader + csvRows
+      );
+
+      console.log('Report sent successfully to:', user.email);
+      return true;
+    } catch (error) {
+      console.error('Report generation error:', error);
+      throw error;
     }
-    
-    return medication;
+  }
+
+  async handleMedicationReminder(medication, user) {
+    try {
+      const emailContent = `
+        <h2>Medication Reminder</h2>
+        <p>Hello ${user.username || user.email},</p>
+        <p>Time to take your medication: <strong>${medication.name}</strong></p>
+        <p>Details:</p>
+        <ul>
+          <li>Time: ${new Date(medication.scheduledDate).toLocaleTimeString()}</li>
+          <li>Description: ${medication.description || 'No description'}</li>
+          <li>Type: ${medication.type}</li>
+        </ul>
+        <p><a href="${process.env.CLIENT_URL}/medications/${medication._id}/mark-done">Mark as Done</a></p>
+      `;
+
+      await sendEmail(
+        user.email,
+        'Medication Reminder',
+        emailContent
+      );
+
+      if (medication.type === 'recurring') {
+        const nextDate = new Date(medication.scheduledDate);
+        nextDate.setDate(nextDate.getDate() + 1);
+        await this.scheduleReminder({ ...medication, scheduledDate: nextDate }, user);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Reminder handling error:', error);
+      throw error;
+    }
   }
 }
 
