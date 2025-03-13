@@ -74,9 +74,15 @@ router.get('/', auth, async (req, res) => {
 // Add medication with reminder
 router.post('/add', auth, validateMedication, async (req, res) => {
   try {
-    console.log('Creating medication:', {
-      userId: req.user.id,
-      body: req.body
+    // Log timezone info
+    console.log('Adding medication with timezone info:', {
+      serverTime: new Date(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      requestData: {
+        date: req.body.date,
+        time: req.body.time,
+        type: req.body.type
+      }
     });
 
     const medicationData = {
@@ -90,19 +96,21 @@ router.post('/add', auth, validateMedication, async (req, res) => {
 
     const medication = new Medication(medicationData);
     const saved = await medication.save();
-    
-    // Schedule reminder
+
+    // Schedule reminder with logging
     const user = await User.findById(req.user.id);
+    console.log('Scheduling reminder for new medication:', {
+      medicationId: saved._id,
+      scheduledDate: saved.scheduledDate,
+      userEmail: user.email
+    });
+
     await scheduleReminder(saved, user);
 
-    console.log('Medication saved with reminder:', saved);
     res.status(201).json(saved);
   } catch (error) {
     console.error('Add medication error:', error);
-    res.status(500).json({ 
-      message: 'Error creating medication',
-      error: error.message
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -127,8 +135,38 @@ router.patch('/:id/status', auth, async (req, res) => {
     console.log('Status updated:', medication);
     res.json(medication);
   } catch (error) {
+    const medications = await Medication.find({
     console.error('Update status error:', error);
     res.status(500).json({ error: 'Failed to update status' });
+  }
+});
+
+router.get('/:id/status', auth, medicationController.getMedicationStatus);
+
+module.exports = router;
+      userId: req.user.id,
+      status: 'pending',
+      scheduledDate: { $gt: new Date() }
+    });
+
+    const reminderInfo = medications.map(med => ({
+      id: med._id,
+      name: med.name,
+      type: med.type,
+      scheduledDate: med.scheduledDate,
+      timeUntilReminder: new Date(med.scheduledDate) - new Date(),
+      minutesUntil: Math.floor((new Date(med.scheduledDate) - new Date()) / 1000 / 60)
+    }));
+
+    res.json({
+      totalReminders: reminderInfo.length,
+      reminders: reminderInfo,
+      serverTime: new Date(),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  } catch (error) {
+    console.error('Debug reminders error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
