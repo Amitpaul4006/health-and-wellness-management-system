@@ -1,54 +1,49 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
 const { sendEmail } = require('../config/emailConfig');
 const medicationService = require('../services/medicationService');
+const User = require('../models/User');
 
-router.get('/test-email', auth, async (req, res) => {
+// Debug routes - already protected by auth middleware from server.js
+router.get('/test-email', async (req, res) => {
   try {
-    console.log('Testing email configuration:', {
-      emailUser: process.env.EMAIL_USER,
-      hasPassword: !!process.env.EMAIL_APP_PASSWORD,
-      environment: process.env.NODE_ENV
-    });
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
     await sendEmail(
-      req.user.email,
+      user.email,
       'Test Email from Production',
       '<h2>Email Test</h2><p>This is a test email from the production environment.</p>'
     );
 
     res.json({ message: 'Test email sent successfully' });
   } catch (error) {
-    console.error('Email test error:', error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    console.error('Test email error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
-router.get('/test-reminder', auth, async (req, res) => {
+router.get('/test-reminder', async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const testMed = {
-      _id: 'test-' + Date.now(),
+      _id: `test-${Date.now()}`,
       name: 'Test Medication',
-      description: 'Test Reminder',
       type: 'one-time',
-      scheduledDate: new Date(Date.now() + 1000 * 60) // 1 minute from now
+      scheduledDate: new Date(Date.now() + 60000)
     };
 
-    console.log('Testing reminder with:', {
-      medication: testMed,
-      userEmail: req.user.email
-    });
-
-    await medicationService.sendReminderNow(testMed, { 
-      email: req.user.email,
-      _id: req.user.id 
-    });
-
+    await medicationService.sendReminderNow(testMed, user);
     res.json({ message: 'Test reminder sent successfully' });
   } catch (error) {
-    console.error('Reminder test error:', error);
-    res.status(500).json({ error: error.message, stack: error.stack });
+    console.error('Test reminder error:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 

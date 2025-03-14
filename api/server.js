@@ -2,20 +2,17 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/auth');  // Import the whole module
+const auth = require('./middleware/auth');  // Add auth import
+const authRoutes = require('./routes/auth');
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const debugRoutes = require('./routes/debug');
-const debug = require('./middleware/debugMiddleware');
 
 const app = express();
 
 // Basic middleware
 app.use(cors());
 app.use(express.json());
-
-// Add debug middleware
-app.use(debug);
 
 // Simple logging middleware
 app.use((req, res, next) => {
@@ -40,31 +37,18 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Mount routes for both environments
 const { handlers: authHandlers } = authRoutes;
 
-// Auth routes
+// Unprotected auth routes
 app.post('/auth/login', authHandlers.login);
 app.post('/auth/register', authHandlers.register);
 app.post('/auth/logout', authHandlers.logout);
-
-// Full paths for serverless
 app.post('/.netlify/functions/api/auth/login', authHandlers.login);
 app.post('/.netlify/functions/api/auth/register', authHandlers.register);
 app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount medication routes for both environments
-app.use('/medications', medicationRoutes);
-app.use('/.netlify/functions/api/medications', medicationRoutes);
-
-// Mount report routes for both environments
-app.use('/reports', reportRoutes);
-app.use('/.netlify/functions/api/reports', reportRoutes);
-
-// Mount debug routes (only in development or with admin access)
-app.use(['/debug', '/.netlify/functions/api/debug'], auth, (req, res, next) => {
-  if (process.env.NODE_ENV === 'production' && !req.user?.isAdmin) {
-    return res.status(403).json({ message: 'Debug routes disabled in production' });
-  }
-  next();
-}, debugRoutes);
+// Protected routes with auth middleware
+app.use(['/debug', '/.netlify/functions/api/debug'], auth, debugRoutes);
+app.use(['/medications', '/.netlify/functions/api/medications'], auth, medicationRoutes);
+app.use(['/reports', '/.netlify/functions/api/reports'], auth, reportRoutes);
 
 // Test route
 app.get('/test', (req, res) => {
