@@ -1,53 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const Medication = require('../models/Medication');
 const User = require('../models/User');
+const Medication = require('../models/Medication');
 const { sendEmail } = require('../config/emailConfig');
 
 router.post('/generate', async (req, res) => {
   try {
-    console.log('Report generation started:', req.user.id);
-    
+    // Get user first to ensure we have email
     const user = await User.findById(req.user.id);
-    if (!user) {
-      throw new Error('User not found');
+    if (!user || !user.email) {
+      return res.status(400).json({ error: 'User email not found' });
     }
 
+    // Get medications
     const medications = await Medication.find({ userId: req.user.id });
-    console.log('Found medications:', medications.length);
-
-    // Safer date formatting
-    const formatDate = (date) => {
-      try {
-        const d = new Date(date);
-        return {
-          date: d.toISOString().split('T')[0],
-          time: d.toTimeString().split(' ')[0]
-        };
-      } catch (error) {
-        console.error('Date formatting error:', error);
-        return { date: 'Invalid date', time: 'Invalid time' };
-      }
-    };
-
-    // Generate CSV with error handling
-    const csvHeader = 'Name,Description,Type,Date,Time,Status\n';
-    const csvRows = medications.map(med => {
-      const { date, time } = formatDate(med.scheduledDate);
-      return [
-        med.name || '',
-        med.description || '',
-        med.type || '',
-        date,
-        time,
-        med.status || 'pending'
-      ].join(',');
-    }).join('\n');
-
+    
+    // Generate CSV
+    const csvHeader = 'Name,Description,Type,Scheduled Date,Status\n';
+    const csvRows = medications.map(med => 
+      `${med.name},${med.description || ''},${med.type},${med.scheduledDate.toISOString()},${med.status}`
+    ).join('\n');
+    
     const csvContent = csvHeader + csvRows;
-    console.log('CSV generated:', csvContent.substring(0, 100) + '...');
 
-    // Send email
+    // Send email with CSV
     await sendEmail(
       user.email,
       'Your Medication Report',
@@ -57,12 +33,10 @@ router.post('/generate', async (req, res) => {
       csvContent
     );
 
-    console.log('Report email sent to:', user.email);
     res.json({ message: 'Report generated and sent successfully' });
-
   } catch (error) {
-    console.error('Report generation failed:', error);
-    res.status(500).json({ error: error.message });
+    console.error('Report generation error:', error);
+    res.status(500).json({ error: error.message || 'Failed to generate report' });
   }
 });
 

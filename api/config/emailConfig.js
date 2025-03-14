@@ -1,32 +1,45 @@
 const nodemailer = require('nodemailer');
 
-const sendEmail = async (emailData) => {
+const createTransporter = () => {
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_APP_PASSWORD
+    },
+    connectionTimeout: 5000,
+    socketTimeout: 5000
+  });
+};
+
+const sendEmail = async (to, subject, html, attachments = null) => {
   try {
-    console.log('Sending email with config:', {
-      env: process.env.NODE_ENV,
-      hasUser: !!process.env.EMAIL_USER,
-      type: emailData.attachments ? 'report' : 'reminder'
-    });
+    console.log('Sending email:', { to, subject, hasAttachments: !!attachments });
+    
+    if (!to) {
+      throw new Error('No recipients defined');
+    }
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_APP_PASSWORD
-      },
-      connectionTimeout: 5000,
-      socketTimeout: 5000
-    });
+    const transporter = createTransporter();
+    const mailOptions = {
+      from: `Health Reminder <${process.env.EMAIL_FROM}>`,
+      to,
+      subject,
+      html,
+      ...(attachments && {
+        attachments: [{
+          filename: 'medication-report.csv',
+          content: attachments,
+          contentType: 'text/csv'
+        }]
+      })
+    };
 
-    const result = await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      ...emailData
-    });
-
-    console.log('Email sent:', result.messageId);
-    return result;
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent:', info.messageId);
+    return info;
   } catch (error) {
-    console.error('Email error:', error);
+    console.error('Email send error:', error);
     throw error;
   }
 };
