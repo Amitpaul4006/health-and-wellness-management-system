@@ -14,21 +14,26 @@ const createTransporter = () => {
 
 const sendEmail = async (to, subject, html, attachments = null) => {
   try {
-    console.log('Sending email:', { to, subject, hasAttachments: !!attachments });
-    
     if (!to) {
-      throw new Error('No recipients defined');
+      throw new Error('Recipient email is required');
     }
+
+    console.log('Sending email:', {
+      to,
+      subject,
+      hasAttachments: !!attachments,
+      attachmentSize: attachments?.length || 0
+    });
 
     const transporter = createTransporter();
     const mailOptions = {
-      from: `Health Reminder <${process.env.EMAIL_FROM}>`,
+      from: `Health Reminder <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
       to,
       subject,
       html,
       ...(attachments && {
         attachments: [{
-          filename: 'medication-report.csv',
+          filename: `medication-report-${new Date().toISOString().split('T')[0]}.csv`,
           content: attachments,
           contentType: 'text/csv'
         }]
@@ -36,10 +41,17 @@ const sendEmail = async (to, subject, html, attachments = null) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent:', info.messageId);
+    console.log('Email sent successfully:', {
+      messageId: info.messageId,
+      to: to
+    });
     return info;
   } catch (error) {
-    console.error('Email send error:', error);
+    console.error('Email send error:', {
+      error: error.message,
+      to: to,
+      subject: subject
+    });
     throw error;
   }
 };
