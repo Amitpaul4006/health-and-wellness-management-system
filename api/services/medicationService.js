@@ -7,38 +7,34 @@ const activeReminders = new Map();
 class MedicationService {
   async scheduleReminder(medication, user) {
     try {
-      const scheduledTime = new Date(medication.scheduledDate);
-      const now = new Date();
-      const delay = Math.max(0, scheduledTime.getTime() - now.getTime());
-
-      console.log('Scheduling medication reminder:', {
-        medicationId: medication._id,
-        userId: user._id,
-        scheduledTime: scheduledTime.toISOString(),
-        delay: `${Math.floor(delay / 1000 / 60)} minutes`,
-        type: medication.type,
-        userEmail: user.email
+      console.log('Scheduling reminder:', {
+        medication: medication._id,
+        user: user.email,
+        date: medication.scheduledDate
       });
 
-      if (delay <= 0) {
-        console.log('Medication time has passed, sending immediate reminder');
+      // For immediate or past medications
+      if (new Date(medication.scheduledDate) <= new Date()) {
         await this.sendReminderNow(medication, user);
         return;
       }
 
-      // Clear existing reminder if any
+      // For future medications
+      const delay = new Date(medication.scheduledDate) - new Date();
+      console.log('Setting reminder with delay:', Math.floor(delay / 1000 / 60), 'minutes');
+
+      // Clear any existing reminder
       this.cancelReminder(medication._id);
 
-      // Schedule the reminder
+      // Set new reminder
       const timerId = setTimeout(async () => {
         try {
           await this.sendReminderNow(medication, user);
           
-          // For recurring medications
+          // Handle recurring medications
           if (medication.type === 'recurring') {
-            const nextDate = new Date(scheduledTime);
+            const nextDate = new Date(medication.scheduledDate);
             nextDate.setDate(nextDate.getDate() + 1);
-            console.log('Scheduling next recurring reminder for:', nextDate);
             
             await this.scheduleReminder({
               ...medication,
@@ -46,20 +42,16 @@ class MedicationService {
             }, user);
           }
         } catch (error) {
-          console.error('Failed to send reminder:', error);
+          console.error('Reminder execution failed:', error);
         }
       }, delay);
 
+      // Store the timer
       activeReminders.set(medication._id.toString(), timerId);
-      
-      // Update medication with reminder info
-      await Medication.findByIdAndUpdate(medication._id, {
-        lastReminderScheduled: now,
-        nextReminder: scheduledTime
-      });
 
+      return true;
     } catch (error) {
-      console.error('Reminder scheduling error:', error);
+      console.error('Failed to schedule reminder:', error);
       throw error;
     }
   }

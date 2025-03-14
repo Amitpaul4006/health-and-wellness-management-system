@@ -73,23 +73,44 @@ router.get('/', auth, async (req, res) => {
 // Add medication with reminder
 router.post('/add', auth, validateMedication, async (req, res) => {
   try {
-    const medicationData = {
+    // Get user first
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Create medication
+    const medication = new Medication({
       userId: req.user.id,
       name: req.body.name,
       description: req.body.description,
       type: req.body.type,
       scheduledDate: new Date(`${req.body.date}T${req.body.time}`),
       status: 'pending'
-    };
+    });
 
-    const medication = new Medication(medicationData);
-    const saved = await medication.save();
+    // Save medication
+    const savedMedication = await medication.save();
+    console.log('Medication saved:', {
+      id: savedMedication._id,
+      type: savedMedication.type,
+      scheduledDate: savedMedication.scheduledDate
+    });
 
-    // Use medicationService instead of separate notification services
-    const user = await User.findById(req.user.id);
-    await medicationService.scheduleReminder(saved, user);
+    // Schedule reminder
+    await medicationService.scheduleReminder(savedMedication, {
+      _id: user._id,
+      email: user.email,
+      username: user.username
+    });
 
-    res.status(201).json(saved);
+    console.log('Reminder scheduled for:', {
+      medicationId: savedMedication._id,
+      email: user.email,
+      scheduledDate: savedMedication.scheduledDate
+    });
+
+    res.status(201).json(savedMedication);
   } catch (error) {
     console.error('Add medication error:', error);
     res.status(500).json({ error: error.message });
