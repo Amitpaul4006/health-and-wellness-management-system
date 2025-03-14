@@ -1,57 +1,32 @@
 const nodemailer = require('nodemailer');
 
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD
-    },
-    connectionTimeout: 5000,
-    socketTimeout: 5000
-  });
-};
-
-const sendEmail = async (to, subject, html, attachments = null) => {
+const sendEmail = async (emailData) => {
   try {
-    if (!to) {
-      throw new Error('Recipient email is required');
-    }
-
-    console.log('Sending email:', {
-      to,
-      subject,
-      hasAttachments: !!attachments,
-      attachmentSize: attachments?.length || 0
+    console.log('Sending email with config:', {
+      env: process.env.NODE_ENV,
+      hasUser: !!process.env.EMAIL_USER,
+      type: emailData.attachments ? 'report' : 'reminder'
     });
 
-    const transporter = createTransporter();
-    const mailOptions = {
-      from: `Health Reminder <${process.env.EMAIL_FROM || process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      html,
-      ...(attachments && {
-        attachments: [{
-          filename: `medication-report-${new Date().toISOString().split('T')[0]}.csv`,
-          content: attachments,
-          contentType: 'text/csv'
-        }]
-      })
-    };
-
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', {
-      messageId: info.messageId,
-      to: to
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_APP_PASSWORD
+      },
+      connectionTimeout: 5000,
+      socketTimeout: 5000
     });
-    return info;
+
+    const result = await transporter.sendMail({
+      from: process.env.EMAIL_FROM,
+      ...emailData
+    });
+
+    console.log('Email sent:', result.messageId);
+    return result;
   } catch (error) {
-    console.error('Email send error:', {
-      error: error.message,
-      to: to,
-      subject: subject
-    });
+    console.error('Email error:', error);
     throw error;
   }
 };

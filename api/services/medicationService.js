@@ -8,46 +8,48 @@ class MedicationService {
   async scheduleReminder(medication, user) {
     try {
       console.log('Scheduling reminder:', {
-        medication: medication._id,
-        user: user.email,
-        date: medication.scheduledDate
+        medicationId: medication._id,
+        userId: user._id,
+        email: user.email,
+        scheduledDate: medication.scheduledDate
       });
 
+      const scheduledTime = new Date(medication.scheduledDate);
+      const now = new Date();
+
       // For immediate or past medications
-      if (new Date(medication.scheduledDate) <= new Date()) {
+      if (scheduledTime <= now) {
+        console.log('Sending immediate reminder');
         await this.sendReminderNow(medication, user);
         return;
       }
 
       // For future medications
-      const delay = new Date(medication.scheduledDate) - new Date();
+      const delay = scheduledTime.getTime() - now.getTime();
       console.log('Setting reminder with delay:', Math.floor(delay / 1000 / 60), 'minutes');
 
-      // Clear any existing reminder
-      this.cancelReminder(medication._id);
-
-      // Set new reminder
-      const timerId = setTimeout(async () => {
+      setTimeout(async () => {
         try {
           await this.sendReminderNow(medication, user);
           
-          // Handle recurring medications
           if (medication.type === 'recurring') {
-            const nextDate = new Date(medication.scheduledDate);
+            const nextDate = new Date(scheduledTime);
             nextDate.setDate(nextDate.getDate() + 1);
-            
             await this.scheduleReminder({
               ...medication,
               scheduledDate: nextDate
             }, user);
           }
         } catch (error) {
-          console.error('Reminder execution failed:', error);
+          console.error('Failed to send scheduled reminder:', error);
         }
       }, delay);
 
-      // Store the timer
-      activeReminders.set(medication._id.toString(), timerId);
+      // Update medication status
+      await Medication.findByIdAndUpdate(medication._id, {
+        lastReminderScheduled: now,
+        nextReminder: scheduledTime
+      });
 
       return true;
     } catch (error) {
@@ -89,16 +91,22 @@ class MedicationService {
         </ul>
       `;
 
-      await sendEmail(
+      // Set a shorter timeout for serverless environment
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Email timeout')), 5000);
+      });
+
+      const emailPromise = sendEmail(
         user.email,
         'Medication Reminder',
         emailContent
       );
 
-      console.log('Reminder sent successfully to:', user.email);
-      return true;
+      const result = await Promise.race([emailPromise, timeoutPromise]);
+      console.log('Reminder sent to:', user.email);
+      return result;
     } catch (error) {
-      console.error('Failed to send reminder:', error);
+      console.error('Reminder send error:', error);
       throw error;
     }
   }

@@ -73,7 +73,9 @@ router.get('/', auth, async (req, res) => {
 // Add medication with reminder
 router.post('/add', auth, validateMedication, async (req, res) => {
   try {
-    // Get user first
+    console.log('Adding medication:', req.body);
+
+    // Get user details first
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -89,27 +91,24 @@ router.post('/add', auth, validateMedication, async (req, res) => {
       status: 'pending'
     });
 
-    // Save medication
     const savedMedication = await medication.save();
-    console.log('Medication saved:', {
-      id: savedMedication._id,
+    console.log('Medication saved:', savedMedication._id);
+
+    // Schedule reminder immediately after saving
+    console.log('Scheduling reminder for:', {
+      medicationId: savedMedication._id,
       type: savedMedication.type,
       scheduledDate: savedMedication.scheduledDate
     });
 
-    // Schedule reminder
+    // Schedule reminder with full user object
     await medicationService.scheduleReminder(savedMedication, {
       _id: user._id,
       email: user.email,
       username: user.username
     });
 
-    console.log('Reminder scheduled for:', {
-      medicationId: savedMedication._id,
-      email: user.email,
-      scheduledDate: savedMedication.scheduledDate
-    });
-
+    console.log('Reminder scheduled successfully');
     res.status(201).json(savedMedication);
   } catch (error) {
     console.error('Add medication error:', error);
