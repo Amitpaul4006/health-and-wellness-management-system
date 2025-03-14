@@ -75,9 +75,14 @@ class MedicationService {
 
   async sendReminderNow(medication, user) {
     try {
-      console.log('Sending immediate reminder for:', {
+      if (!user?.email) {
+        throw new Error('User email is required for sending reminder');
+      }
+
+      console.log('Sending reminder:', {
         medicationId: medication._id,
-        userEmail: user.email
+        userName: user.username || user.email,
+        scheduledTime: medication.scheduledDate
       });
 
       const emailContent = `
@@ -90,7 +95,6 @@ class MedicationService {
           <li>Description: ${medication.description || 'No description'}</li>
           <li>Scheduled Time: ${new Date(medication.scheduledDate).toLocaleString()}</li>
         </ul>
-        <p><a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/medications/${medication._id}/mark-done">Mark as Done</a></p>
       `;
 
       await sendEmail(
@@ -99,15 +103,10 @@ class MedicationService {
         emailContent
       );
 
-      console.log('Reminder sent successfully');
-
-      // Update medication status
-      await Medication.findByIdAndUpdate(medication._id, {
-        lastReminderSent: new Date()
-      });
-
+      console.log('Reminder sent successfully to:', user.email);
+      return true;
     } catch (error) {
-      console.error('Failed to send immediate reminder:', error);
+      console.error('Failed to send reminder:', error);
       throw error;
     }
   }

@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const { sendEmail } = require('../config/emailConfig');
 const medicationService = require('../services/medicationService');
 const User = require('../models/User');
@@ -32,15 +33,36 @@ router.get('/test-reminder', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    // Create a valid test medication with proper ObjectId
     const testMed = {
-      _id: `test-${Date.now()}`,
+      _id: new mongoose.Types.ObjectId(), // Fix: Use proper MongoDB ObjectId
       name: 'Test Medication',
       type: 'one-time',
-      scheduledDate: new Date(Date.now() + 60000)
+      description: 'Test reminder medication',
+      userId: user._id,
+      scheduledDate: new Date(Date.now() + 60000), // 1 minute from now
+      status: 'pending'
     };
 
+    console.log('Sending test reminder:', {
+      medication: testMed,
+      user: {
+        id: user._id,
+        email: user.email
+      }
+    });
+
+    // Send immediate reminder
     await medicationService.sendReminderNow(testMed, user);
-    res.json({ message: 'Test reminder sent successfully' });
+    
+    res.json({ 
+      message: 'Test reminder sent successfully',
+      details: {
+        medicationId: testMed._id,
+        scheduledFor: testMed.scheduledDate,
+        sentTo: user.email
+      }
+    });
   } catch (error) {
     console.error('Test reminder error:', error);
     res.status(500).json({ error: error.message });
