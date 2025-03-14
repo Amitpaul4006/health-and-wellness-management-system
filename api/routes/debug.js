@@ -28,32 +28,32 @@ router.get('/test-email', async (req, res) => {
 
 router.get('/test-reminder', async (req, res) => {
   try {
+    // Set response headers immediately
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Cache-Control', 'no-cache');
+
     const user = await User.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Create a valid test medication with proper ObjectId
     const testMed = {
-      _id: new mongoose.Types.ObjectId(), // Fix: Use proper MongoDB ObjectId
+      _id: new mongoose.Types.ObjectId(),
       name: 'Test Medication',
       type: 'one-time',
       description: 'Test reminder medication',
       userId: user._id,
-      scheduledDate: new Date(Date.now() + 60000), // 1 minute from now
-      status: 'pending'
+      scheduledDate: new Date(Date.now() + 60000)
     };
 
-    console.log('Sending test reminder:', {
-      medication: testMed,
-      user: {
-        id: user._id,
-        email: user.email
-      }
-    });
+    // Use Promise.race to handle timeout
+    const reminderPromise = medicationService.sendReminderNow(testMed, user);
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Request timeout')), 8000)
+    );
 
-    // Send immediate reminder
-    await medicationService.sendReminderNow(testMed, user);
+    // Wait for either reminder to be sent or timeout
+    await Promise.race([reminderPromise, timeoutPromise]);
     
     res.json({ 
       message: 'Test reminder sent successfully',
