@@ -47,7 +47,8 @@ router.get('/test-reminder', async (req, res) => {
   }
 });
 
-router.get('/system-status', auth, async (req, res) => {
+// Remove auth reference since it's handled in server.js
+router.get('/system-status', async (req, res) => {
   const status = {
     environment: process.env.NODE_ENV,
     serverTime: new Date().toISOString(),

@@ -34,21 +34,31 @@ mongoose.connect(process.env.MONGODB_URI, {
   console.error('MongoDB connection error:', err);
 });
 
-// Mount routes for both environments
-const { handlers: authHandlers } = authRoutes;
+// Unprotected Routes (No auth required)
+app.post('/auth/login', authRoutes.handlers.login);
+app.post('/auth/register', authRoutes.handlers.register);
+app.post('/auth/logout', authRoutes.handlers.logout);
 
-// Unprotected auth routes
-app.post('/auth/login', authHandlers.login);
-app.post('/auth/register', authHandlers.register);
-app.post('/auth/logout', authHandlers.logout);
-app.post('/.netlify/functions/api/auth/login', authHandlers.login);
-app.post('/.netlify/functions/api/auth/register', authHandlers.register);
-app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
+// Serverless Unprotected Routes
+app.post('/.netlify/functions/api/auth/login', authRoutes.handlers.login);
+app.post('/.netlify/functions/api/auth/register', authRoutes.handlers.register);
+app.post('/.netlify/functions/api/auth/logout', authRoutes.handlers.logout);
 
-// Protected routes with auth middleware
-app.use(['/debug', '/.netlify/functions/api/debug'], auth, debugRoutes);
-app.use(['/medications', '/.netlify/functions/api/medications'], auth, medicationRoutes);
-app.use(['/reports', '/.netlify/functions/api/reports'], auth, reportRoutes);
+// Protected Routes (Auth required)
+const protectedPaths = {
+  debug: ['/debug', '/.netlify/functions/api/debug'],
+  medications: ['/medications', '/.netlify/functions/api/medications'],
+  reports: ['/reports', '/.netlify/functions/api/reports']
+};
+
+// Mount protected routes
+Object.entries(protectedPaths).forEach(([key, paths]) => {
+  const route = key === 'debug' ? debugRoutes : 
+                key === 'medications' ? medicationRoutes : 
+                reportRoutes;
+                
+  paths.forEach(path => app.use(path, auth, route));
+});
 
 // Test route
 app.get('/test', (req, res) => {
