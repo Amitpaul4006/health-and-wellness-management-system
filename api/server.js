@@ -6,12 +6,16 @@ const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 const debugRoutes = require('./routes/debug');
+const debug = require('./middleware/debugMiddleware');
 
 const app = express();
 
 // Basic middleware
 app.use(cors());
 app.use(express.json());
+
+// Add debug middleware
+app.use(debug);
 
 // Simple logging middleware
 app.use((req, res, next) => {
