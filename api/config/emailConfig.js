@@ -1,23 +1,29 @@
 const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
-  console.log('Creating email transporter with:', {
-    user: process.env.EMAIL_USER,
-    hasPassword: !!process.env.EMAIL_APP_PASSWORD,
-    env: process.env.NODE_ENV
+  // Validate required env vars
+  const requiredVars = ['EMAIL_USER', 'EMAIL_APP_PASSWORD'];
+  const missing = requiredVars.filter(key => !process.env[key]);
+  
+  if (missing.length) {
+    throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
+  }
+
+  console.log('Creating email transporter:', {
+    emailUser: process.env.EMAIL_USER,
+    envFile: process.env.NODE_ENV === 'production' ? '.env.production' : '.env'
   });
 
   return nodemailer.createTransport({
     service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
     auth: {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_APP_PASSWORD
     },
-    tls: {
-      rejectUnauthorized: false
-    },
-    debug: true,
-    logger: true
+    debug: true
   });
 };
 
