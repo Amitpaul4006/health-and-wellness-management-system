@@ -1,9 +1,10 @@
 const nodemailer = require('nodemailer');
 
 const createTransporter = () => {
-  console.log('Creating email transporter:', {
+  console.log('Creating email transporter with:', {
     user: process.env.EMAIL_USER,
-    environment: process.env.NODE_ENV
+    hasPassword: !!process.env.EMAIL_APP_PASSWORD,
+    env: process.env.NODE_ENV
   });
 
   return nodemailer.createTransport({
@@ -14,32 +15,27 @@ const createTransporter = () => {
     },
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    debug: true,
+    logger: true
   });
 };
 
-const sendEmail = async (to, subject, html, attachments = null) => {
+const sendEmail = async (to, subject, html) => {
   try {
-    const transporter = createTransporter();
     console.log('Sending email:', { to, subject });
-
+    
+    const transporter = createTransporter();
     const mailOptions = {
-      from: `Health & Wellness <${process.env.EMAIL_FROM}>`,
+      from: `Health Reminder <${process.env.EMAIL_FROM}>`,
       to,
       subject,
-      html,
-      ...(attachments && {
-        attachments: [{
-          filename: 'report.csv',
-          content: attachments,
-          contentType: 'text/csv'
-        }]
-      })
+      html
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log('Email sent successfully:', info.messageId);
-    return true;
+    console.log('Email sent:', info.messageId);
+    return info;
   } catch (error) {
     console.error('Email send error:', error);
     throw error;

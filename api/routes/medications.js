@@ -162,6 +162,38 @@ router.get('/debug/notifications', auth, async (req, res) => {
   }
 });
 
+// Add debug endpoint
+router.get('/debug/reminder-status', auth, async (req, res) => {
+  try {
+    const medications = await Medication.find({
+      userId: req.user.id,
+      status: 'pending'
+    }).sort({ scheduledDate: 1 });
+
+    const now = new Date();
+    const reminderStatus = medications.map(med => ({
+      id: med._id,
+      name: med.name,
+      type: med.type,
+      scheduledDate: med.scheduledDate,
+      timeUntilReminder: med.scheduledDate - now,
+      minutesUntil: Math.floor((med.scheduledDate - now) / 1000 / 60),
+      lastReminderSent: med.lastReminderSent,
+      lastReminderScheduled: med.lastReminderScheduled,
+      nextReminder: med.nextReminder
+    }));
+
+    res.json({
+      count: medications.length,
+      currentTime: now,
+      medications: reminderStatus
+    });
+  } catch (error) {
+    console.error('Reminder status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get medication status
 router.get('/:id/status', auth, async (req, res) => {
   try {

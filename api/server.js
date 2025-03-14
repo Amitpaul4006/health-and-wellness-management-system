@@ -5,36 +5,7 @@ const mongoose = require('mongoose');
 const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
-const auth = require('./middleware/auth');
-const User = require('./models/User');
-const Medication = require('./models/Medication');
-const medicationService = require('./services/medicationService');
-
-// Verify configuration on startup
-const verifyConfig = () => {
-  const requiredEnvVars = [
-    'MONGODB_URI',
-    'JWT_SECRET',
-    'EMAIL_USER',
-    'EMAIL_APP_PASSWORD',
-    'EMAIL_FROM'
-  ];
-
-  const missing = requiredEnvVars.filter(env => !process.env[env]);
-  if (missing.length > 0) {
-    console.error('Missing required environment variables:', missing);
-    process.exit(1);
-  }
-
-  console.log('Configuration verified:', {
-    environment: process.env.NODE_ENV,
-    hasEmail: !!process.env.EMAIL_USER,
-    hasDB: !!process.env.MONGODB_URI
-  });
-};
-
-// Call verification before starting
-verifyConfig();
+const debugRoutes = require('./routes/debug');
 
 const app = express();
 
@@ -75,69 +46,25 @@ app.post('/.netlify/functions/api/auth/login', authHandlers.login);
 app.post('/.netlify/functions/api/auth/register', authHandlers.register);
 app.post('/.netlify/functions/api/auth/logout', authHandlers.logout);
 
-// Mount routes with auth middleware first
-app.use(['/medications', '/.netlify/functions/api/medications'], auth, (req, res, next) => {
-  if (!req.user?.id) {
-    console.error('No user ID in request');
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  next();
-}, medicationRoutes);
+// Mount medication routes for both environments
+app.use('/medications', medicationRoutes);
+app.use('/.netlify/functions/api/medications', medicationRoutes);
 
-// Mount report routes with auth
-app.use(['/reports', '/.netlify/functions/api/reports'], auth, (req, res, next) => {
-  if (!req.user?.id) {
-    return res.status(401).json({ message: 'Authentication required' });
+// Mount report routes for both environments
+app.use('/reports', reportRoutes);
+app.use('/.netlify/functions/api/reports', reportRoutes);
+
+// Mount debug routes (only in development or with admin access)
+app.use(['/debug', '/.netlify/functions/api/debug'], auth, (req, res, next) => {
+  if (process.env.NODE_ENV === 'production' && !req.user?.isAdmin) {
+    return res.status(403).json({ message: 'Debug routes disabled in production' });
   }
   next();
-}, require('./routes/report'));
+}, debugRoutes);
 
 // Test route
 app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
-});
-
-// Schedule existing reminders on server start
-mongoose.connection.once('connected', async () => {
-  try {
-    const medications = await Medication.find({
-      status: 'pending',
-      scheduledDate: { $gt: new Date() }
-    });
-
-    console.log('Scheduling reminders for existing medications:', medications.length);
-
-    for (const medication of medications) {
-      const user = await User.findById(medication.userId);
-      if (user) {
-        await medicationService.scheduleReminder(medication, user);
-      }
-    }
-  } catch (error) {
-    console.error('Error scheduling existing reminders:', error);
-  }
-});
-
-// Schedule pending reminders on server start
-mongoose.connection.once('connected', async () => {
-  try {
-    const pendingMedications = await Medication.find({
-      status: 'pending',
-      scheduledDate: { $gt: new Date() }
-    });
-
-    console.log('Found pending medications:', pendingMedications.length);
-
-    for (const medication of pendingMedications) {
-      const user = await User.findById(medication.userId);
-      if (user) {
-        await medicationService.scheduleReminder(medication, user);
-        console.log('Scheduled reminder for:', medication.name);
-      }
-    }
-  } catch (error) {
-    console.error('Error scheduling pending reminders:', error);
-  }
 });
 
 // More detailed error handling

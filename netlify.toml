@@ -19,7 +19,6 @@
   EMAIL_USER = "amitpaul4006@gmail.com"
   EMAIL_APP_PASSWORD = "sude iyan qbrx lrea"
   EMAIL_FROM = "amitpaul4006@gmail.com"
-  JWT_SECRET = "qL8f3n7j9D2yW5xGaV6tZ1bH4rK0cQ7pE"  # Add this line
 
 [[redirects]]
   from = "/api/*"

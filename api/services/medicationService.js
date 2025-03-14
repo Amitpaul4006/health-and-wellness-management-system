@@ -11,47 +11,50 @@ class MedicationService {
       const now = new Date();
       const delay = Math.max(0, scheduledTime.getTime() - now.getTime());
 
-      console.log('Scheduling reminder:', {
+      console.log('Scheduling medication reminder:', {
         medicationId: medication._id,
+        userId: user._id,
         scheduledTime: scheduledTime.toISOString(),
-        delayMinutes: Math.floor(delay / 60000)
+        delay: `${Math.floor(delay / 1000 / 60)} minutes`,
+        type: medication.type,
+        userEmail: user.email
       });
 
       if (delay <= 0) {
-        console.log('Skipping past reminder');
+        console.log('Medication time has passed, sending immediate reminder');
+        await this.sendReminderNow(medication, user);
         return;
       }
 
       // Clear existing reminder if any
       this.cancelReminder(medication._id);
 
-      // Schedule new reminder
+      // Schedule the reminder
       const timerId = setTimeout(async () => {
         try {
-          await this.handleMedicationReminder(medication, user);
+          await this.sendReminderNow(medication, user);
           
-          // Schedule next reminder if recurring
+          // For recurring medications
           if (medication.type === 'recurring') {
             const nextDate = new Date(scheduledTime);
             nextDate.setDate(nextDate.getDate() + 1);
+            console.log('Scheduling next recurring reminder for:', nextDate);
             
-            const nextMedication = {
+            await this.scheduleReminder({
               ...medication,
               scheduledDate: nextDate
-            };
-            
-            await this.scheduleReminder(nextMedication, user);
+            }, user);
           }
         } catch (error) {
-          console.error('Reminder processing error:', error);
+          console.error('Failed to send reminder:', error);
         }
       }, delay);
 
       activeReminders.set(medication._id.toString(), timerId);
       
-      // Update medication with scheduling info
+      // Update medication with reminder info
       await Medication.findByIdAndUpdate(medication._id, {
-        lastScheduled: now,
+        lastReminderScheduled: now,
         nextReminder: scheduledTime
       });
 
@@ -67,6 +70,45 @@ class MedicationService {
       clearTimeout(timerId);
       activeReminders.delete(medicationId.toString());
       console.log('Cancelled reminder:', medicationId);
+    }
+  }
+
+  async sendReminderNow(medication, user) {
+    try {
+      console.log('Sending immediate reminder for:', {
+        medicationId: medication._id,
+        userEmail: user.email
+      });
+
+      const emailContent = `
+        <h2>Medication Reminder</h2>
+        <p>Hello ${user.username || user.email},</p>
+        <p>Time to take your medication: <strong>${medication.name}</strong></p>
+        <p>Details:</p>
+        <ul>
+          <li>Type: ${medication.type}</li>
+          <li>Description: ${medication.description || 'No description'}</li>
+          <li>Scheduled Time: ${new Date(medication.scheduledDate).toLocaleString()}</li>
+        </ul>
+        <p><a href="${process.env.CLIENT_URL || 'http://localhost:3000'}/medications/${medication._id}/mark-done">Mark as Done</a></p>
+      `;
+
+      await sendEmail(
+        user.email,
+        'Medication Reminder',
+        emailContent
+      );
+
+      console.log('Reminder sent successfully');
+
+      // Update medication status
+      await Medication.findByIdAndUpdate(medication._id, {
+        lastReminderSent: new Date()
+      });
+
+    } catch (error) {
+      console.error('Failed to send immediate reminder:', error);
+      throw error;
     }
   }
 
