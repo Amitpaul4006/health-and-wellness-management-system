@@ -16,7 +16,16 @@ export const medicationService = {
 };
 
 export const reportService = {
-  generate: () => api.post('/reports/generate'),
+  generate: async () => {
+    const response = await api.post('/reports/generate', {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+    console.log('Report generation response:', response.data);
+    return response;
+  },
   getWeeklyReport: () => api.get('/reports/weekly'),
   getMonthlyReport: () => api.get('/reports/monthly')
 };
