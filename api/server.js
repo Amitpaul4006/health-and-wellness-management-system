@@ -6,9 +6,6 @@ const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 
-// Remove this line that caused the error
-// const auth = require('./middleware/auth');
-
 const app = express();
 
 // Basic middleware
@@ -38,7 +35,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Mount routes for both environments
 const { handlers: authHandlers } = authRoutes;
 
-// Auth routes (keep these unprotected as they were)
+// Auth routes
 app.post('/auth/login', authHandlers.login);
 app.post('/auth/register', authHandlers.register);
 app.post('/auth/logout', authHandlers.logout);
@@ -73,7 +70,6 @@ app.use((err, req, res, next) => {
 
 // Route not found handler
 app.use((req, res) => {
-  console.log('404 for path:', req.path);
   res.status(404).json({ message: 'Route not found' });
 });
 

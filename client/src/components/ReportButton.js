@@ -10,14 +10,21 @@ const ReportButton = () => {
   const [success, setSuccess] = useState('');
   const classes = useStyles({ loading });
 
-  const handleGenerateReport = async () => {
+  const onClick = async () => {
     try {
       setLoading(true);
-      await reportService.generate();
-      setSuccess('Report generation initiated. You will receive an email shortly.');
+      setError(null);
+
+      const response = await reportService.generate();
+      
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      
+      setSuccess('Report generated and sent to your email');
     } catch (error) {
-      setError('Failed to generate report');
       console.error('Report generation error:', error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -28,7 +35,7 @@ const ReportButton = () => {
       <Button
         variant="contained"
         color="primary"
-        onClick={handleGenerateReport}
+        onClick={onClick}
         disabled={loading}
         className={classes.progressButton}
       >
