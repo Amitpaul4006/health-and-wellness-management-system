@@ -58,6 +58,10 @@ app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
 
+// Mount debug routes before the 404 handler
+app.use('/debug', auth, debugRoutes);
+app.use('/.netlify/functions/api/debug', auth, debugRoutes);
+
 // More detailed error handling
 app.use((err, req, res, next) => {
   console.error('API Error:', err);
@@ -70,6 +74,7 @@ app.use((err, req, res, next) => {
 
 // Route not found handler
 app.use((req, res) => {
+  console.log('404 for path:', req.path);
   res.status(404).json({ message: 'Route not found' });
 });
 

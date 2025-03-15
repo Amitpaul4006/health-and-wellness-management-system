@@ -8,18 +8,23 @@ const User = require('../models/User');
 // Debug routes - already protected by auth middleware from server.js
 router.get('/test-email', async (req, res) => {
   try {
+    console.log('Test email request from:', req.user?.id);
     const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    
+    if (!user || !user.email) {
+      return res.status(404).json({ message: 'User or email not found' });
     }
 
     await sendEmail(
       user.email,
-      'Test Email from Production',
-      '<h2>Email Test</h2><p>This is a test email from the production environment.</p>'
+      'Test Email',
+      '<h2>Test Email</h2><p>This is a test email.</p>'
     );
 
-    res.json({ message: 'Test email sent successfully' });
+    res.json({ 
+      message: 'Test email sent successfully',
+      sentTo: user.email
+    });
   } catch (error) {
     console.error('Test email error:', error);
     res.status(500).json({ error: error.message });

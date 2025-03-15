@@ -6,37 +6,39 @@ const { sendEmail } = require('../config/emailConfig');
 
 router.post('/generate', async (req, res) => {
   try {
-    // Get user
-    const user = await User.findById(req.user.id);
-    if (!user?.email) {
-      return res.status(400).json({ error: 'User email not found' });
+    // Ensure req.user exists
+    if (!req.user || !req.user.id) {
+      console.error('No user in request:', req.user);
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
-    // Get medications with safer date handling
+    // Get user details
+    const user = await User.findById(req.user.id);
+    if (!user || !user.email) {
+      console.error('User not found or no email:', req.user.id);
+      return res.status(404).json({ error: 'User email not found' });
+    }
+
+    // Get medications with error handling
     const medications = await Medication.find({ userId: req.user.id });
-    
-    // Generate CSV with null checks
+    console.log(`Found ${medications.length} medications for user ${req.user.id}`);
+
+    // Generate CSV with safe checks
     const csvHeader = 'Name,Description,Type,Scheduled Date,Status\n';
     const csvRows = medications.map(med => {
       const scheduledDate = med.scheduledDate ? new Date(med.scheduledDate).toISOString() : 'Not scheduled';
       return [
         med.name || 'No name',
-        (med.description || '').replace(/,/g, ';'), // Replace commas in description
+        (med.description || '').replace(/,/g, ';'),
         med.type || 'unknown',
         scheduledDate,
         med.status || 'unknown'
       ].join(',');
     }).join('\n');
-    
+
     const csvContent = csvHeader + csvRows;
 
-    console.log('Generating report for:', {
-      userId: req.user.id,
-      email: user.email,
-      medicationsCount: medications.length
-    });
-
-    // Send email with CSV
+    // Send email with report
     await sendEmail(
       user.email,
       'Your Medication Report',
@@ -49,14 +51,11 @@ router.post('/generate', async (req, res) => {
 
     res.json({ 
       message: 'Report generated and sent successfully',
-      medicationsCount: medications.length
+      medicationsCount: medications.length 
     });
   } catch (error) {
     console.error('Report generation error:', error);
-    res.status(500).json({ 
-      error: error.message || 'Failed to generate report',
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json({ error: error.message || 'Failed to generate report' });
   }
 });
 
