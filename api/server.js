@@ -6,6 +6,9 @@ const authRoutes = require('./routes/auth');  // Import the whole module
 const medicationRoutes = require('./routes/medications');
 const reportRoutes = require('./routes/report');
 
+// Remove this line that caused the error
+// const auth = require('./middleware/auth');
+
 const app = express();
 
 // Basic middleware
@@ -35,7 +38,7 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Mount routes for both environments
 const { handlers: authHandlers } = authRoutes;
 
-// Auth routes
+// Auth routes (keep these unprotected as they were)
 app.post('/auth/login', authHandlers.login);
 app.post('/auth/register', authHandlers.register);
 app.post('/auth/logout', authHandlers.logout);
@@ -57,10 +60,6 @@ app.use('/.netlify/functions/api/reports', reportRoutes);
 app.get('/test', (req, res) => {
   res.json({ message: 'API is working' });
 });
-
-// Mount debug routes before the 404 handler
-app.use('/debug', auth, debugRoutes);
-app.use('/.netlify/functions/api/debug', auth, debugRoutes);
 
 // More detailed error handling
 app.use((err, req, res, next) => {

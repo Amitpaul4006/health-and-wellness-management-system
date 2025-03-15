@@ -6,56 +6,46 @@ const { sendEmail } = require('../config/emailConfig');
 
 router.post('/generate', async (req, res) => {
   try {
-    // Ensure req.user exists
-    if (!req.user || !req.user.id) {
-      console.error('No user in request:', req.user);
-      return res.status(401).json({ error: 'Authentication required' });
+    console.log('Report generation request:', req.user);
+
+    // Get user with error handling
+    const user = await User.findById(req.user.id).select('email username');
+    if (!user?.email) {
+      console.error('User not found:', req.user.id);
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get user details
-    const user = await User.findById(req.user.id);
-    if (!user || !user.email) {
-      console.error('User not found or no email:', req.user.id);
-      return res.status(404).json({ error: 'User email not found' });
-    }
-
-    // Get medications with error handling
+    // Get medications safely
     const medications = await Medication.find({ userId: req.user.id });
-    console.log(`Found ${medications.length} medications for user ${req.user.id}`);
 
-    // Generate CSV with safe checks
-    const csvHeader = 'Name,Description,Type,Scheduled Date,Status\n';
-    const csvRows = medications.map(med => {
-      const scheduledDate = med.scheduledDate ? new Date(med.scheduledDate).toISOString() : 'Not scheduled';
-      return [
-        med.name || 'No name',
-        (med.description || '').replace(/,/g, ';'),
-        med.type || 'unknown',
-        scheduledDate,
-        med.status || 'unknown'
-      ].join(',');
-    }).join('\n');
+    // Generate CSV with error checking
+    const csvData = medications.map(med => ({
+      name: med.name || 'Unnamed',
+      description: (med.description || '').replace(/,/g, ';'),
+      type: med.type || 'unknown',
+      scheduledDate: med.scheduledDate ? new Date(med.scheduledDate).toISOString() : 'Not scheduled',
+      status: med.status || 'unknown'
+    }));
 
-    const csvContent = csvHeader + csvRows;
+    const csvContent = 
+      'Name,Description,Type,Scheduled Date,Status\n' +
+      csvData.map(row => Object.values(row).join(',')).join('\n');
 
-    // Send email with report
+    // Send report
     await sendEmail(
       user.email,
       'Your Medication Report',
       `<h2>Medication Report</h2>
-       <p>Please find your medication report attached.</p>
-       <p>Total medications: ${medications.length}</p>
-       <p>Generated on: ${new Date().toLocaleString()}</p>`,
+       <p>Hello ${user.username || user.email},</p>
+       <p>Your medication report is attached.</p>
+       <p>Total medications: ${medications.length}</p>`,
       csvContent
     );
 
-    res.json({ 
-      message: 'Report generated and sent successfully',
-      medicationsCount: medications.length 
-    });
+    res.json({ success: true, count: medications.length });
   } catch (error) {
     console.error('Report generation error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate report' });
+    res.status(500).json({ error: error.message });
   }
 });
 
