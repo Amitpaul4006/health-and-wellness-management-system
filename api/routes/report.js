@@ -1,65 +1,58 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
-const User = require('../models/User');
 const Medication = require('../models/Medication');
 const { sendEmail } = require('../config/emailConfig');
 
 router.post('/generate', auth, async (req, res) => {
   try {
-    // Add request debugging
     console.log('Report generation started:', {
-      userId: req?.user?.id,
-      headers: req.headers.authorization ? 'Auth header present' : 'No auth header'
+      userId: req.user?.id,
+      userEmail: req.user?.email
     });
 
-    // Get user
-    const user = await User.findById(req.user.id);
-    if (!user?.email) {
-      throw new Error('User email not found');
+    if (!req.user?.email) {
+      throw new Error('User email not available');
     }
 
-    // Get medications with error handling
+    // Get medications
     const medications = await Medication.find({ userId: req.user.id });
-    console.log(`Found ${medications.length} medications for user ${user.email}`);
+    
+    // Prepare email data
+    const emailData = {
+      to: req.user.email,
+      subject: 'Your Medication Report',
+      html: `<h2>Medication Report</h2>
+             <p>Hello ${req.user.username || req.user.email},</p>
+             <p>Your medication report is attached.</p>
+             <p>Total medications: ${medications.length}</p>`,
+      attachments: [{
+        filename: `medication-report-${new Date().toISOString().split('T')[0]}.csv`,
+        content: [
+          'Name,Description,Type,Scheduled Date,Status',
+          ...medications.map(med => [
+            med.name || 'Unnamed',
+            (med.description || '').replace(/,/g, ';'),
+            med.type || 'unknown',
+            med.scheduledDate ? new Date(med.scheduledDate).toISOString() : 'Not scheduled',
+            med.status || 'unknown'
+          ].join(','))
+        ].join('\n'),
+        contentType: 'text/csv'
+      }]
+    };
 
-    // Generate CSV safely
-    const csvContent = 'Name,Description,Type,Scheduled Date,Status\n' +
-      medications.map(med => [
-        med.name || 'Unnamed',
-        (med.description || '').replace(/,/g, ';'),
-        med.type || 'unknown',
-        med.scheduledDate ? new Date(med.scheduledDate).toISOString() : 'Not scheduled',
-        med.status || 'unknown'
-      ].join(',')).join('\n');
+    // Send email
+    await sendEmail(emailData);
 
-    // Send email with timeout handling
-    const emailPromise = sendEmail(
-      user.email,
-      'Your Medication Report',
-      `<h2>Medication Report</h2>
-       <p>Hello ${user.username || user.email},</p>
-       <p>Your medication report is attached.</p>
-       <p>Total medications: ${medications.length}</p>`,
-      csvContent
-    );
-
-    // Add timeout for serverless environment
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Report generation timed out')), 8000)
-    );
-
-    await Promise.race([emailPromise, timeoutPromise]);
-
-    console.log('Report sent successfully to:', user.email);
-    res.json({ 
-      success: true, 
-      count: medications.length,
-      email: user.email
+    res.json({
+      success: true,
+      message: 'Report sent successfully',
+      recipient: req.user.email
     });
   } catch (error) {
     console.error('Report generation error:', error);
-    res.status(500).json({ error: error.message || 'Failed to generate report' });
+    res.status(500).json({ error: error.message });
   }
 });
 
